@@ -650,20 +650,70 @@ local function SilentAimTargetLoop()
             continue
         end
         
-        -- Always active mode for silent aim
-        SilentAimActive = true
+        -- Check targeting mode
+        local shouldBeActive = false
+        if Config['Targeting']['Mode'] == 'Automatic' then
+            shouldBeActive = Config['Silent Aim']['Enabled']
+            SilentAimActive = true
+        elseif Config['Targeting']['Mode'] == 'Select' then
+            shouldBeActive = SilentAimActive and Config['Silent Aim']['Enabled']
+        end
         
-        -- Find closest target
-        local target = FindTargetClosestToMouse()
-        if target then
-            CurrentTarget = target
-            CachedTarget = target
-            FoundTarget = true
-        else
-            if not Config['Settings']['Target Aim'] then
+        if not shouldBeActive then
+            if Config['Targeting']['Mode'] == 'Automatic' then
                 CurrentTarget = nil
+                CachedTarget = nil
             end
             FoundTarget = false
+            continue
+        end
+        
+        -- In Select mode, validate existing target
+        if Config['Targeting']['Mode'] == 'Select' then
+            if CachedTarget then
+                local isValid = true
+                if not CachedTarget.Character then
+                    isValid = false
+                elseif PlayerDead(CachedTarget) then
+                    isValid = false
+                elseif PlayerKnocked(CachedTarget) then
+                    isValid = false
+                end
+                
+                if isValid then
+                    CurrentTarget = CachedTarget
+                    FoundTarget = true
+                else
+                    CachedTarget = nil
+                    CurrentTarget = nil
+                    FoundTarget = false
+                    SilentAimActive = false
+                    print("Target lost - press " .. Config['Keybinds']['Silent Aim']['Key'] .. " to lock new target")
+                end
+            else
+                -- No cached target, find new one
+                local target = FindTargetClosestToMouse()
+                if target then
+                    CurrentTarget = target
+                    CachedTarget = target
+                    FoundTarget = true
+                    print("Locked onto: " .. target.Name)
+                else
+                    CurrentTarget = nil
+                    FoundTarget = false
+                end
+            end
+        else
+            -- Automatic mode - always find closest target
+            local target = FindTargetClosestToMouse()
+            if target then
+                CurrentTarget = target
+                CachedTarget = target
+                FoundTarget = true
+            else
+                CurrentTarget = nil
+                FoundTarget = false
+            end
         end
     end
 end
@@ -717,6 +767,33 @@ print("Hitbox expander loaded!")
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
+    
+    -- Silent Aim keybind (for Select mode)
+    if input.KeyCode == Enum.KeyCode[Config['Keybinds']['Silent Aim']['Key']] then
+        if Config['Targeting']['Mode'] == 'Select' then
+            local mode = Config['Keybinds']['Silent Aim']['Mode']
+            if mode == 'Toggle' then
+                if SilentAimActive then
+                    -- Unlock current target
+                    SilentAimActive = false
+                    CurrentTarget = nil
+                    CachedTarget = nil
+                    FoundTarget = false
+                    TargetLine.Visible = false
+                    print("Silent Aim: Unlocked")
+                else
+                    -- Lock onto new target
+                    SilentAimActive = true
+                    print("Silent Aim: Searching for target...")
+                end
+            elseif mode == 'Hold' then
+                if not SilentAimActive then
+                    SilentAimActive = true
+                    print("Silent Aim: Searching for target...")
+                end
+            end
+        end
+    end
     
     if input.KeyCode == Enum.KeyCode[Config['Keybinds']['Target Lock']['Key']] then
         local mode = Config['Keybinds']['Target Lock']['Mode']
@@ -796,6 +873,21 @@ end)
 
 UserInputService.InputEnded:Connect(function(input, processed)
     if processed then return end
+    
+    -- Silent Aim key release (for Hold mode in Select)
+    if input.KeyCode == Enum.KeyCode[Config['Keybinds']['Silent Aim']['Key']] then
+        if Config['Targeting']['Mode'] == 'Select' then
+            local mode = Config['Keybinds']['Silent Aim']['Mode']
+            if mode == 'Hold' then
+                SilentAimActive = false
+                CurrentTarget = nil
+                CachedTarget = nil
+                FoundTarget = false
+                TargetLine.Visible = false
+                print("Silent Aim: Released and unlocked")
+            end
+        end
+    end
     
     if input.KeyCode == Enum.KeyCode[Config['Keybinds']['Target Lock']['Key']] then
         local mode = Config['Keybinds']['Target Lock']['Mode']
@@ -913,7 +1005,12 @@ end)
 task.spawn(SilentAimTargetLoop)
 
 print("Nova Silent Aim loaded successfully!")
-print("Silent Aim: Always Active (360° mode)")
+print("Targeting Mode: " .. Config['Targeting']['Mode'])
+if Config['Targeting']['Mode'] == 'Automatic' then
+    print("Silent Aim: Always Active (360° mode)")
+else
+    print("Silent Aim Key: " .. Config['Keybinds']['Silent Aim']['Key'] .. " (" .. Config['Keybinds']['Silent Aim']['Mode'] .. ")")
+end
 print("Target Lock Key: " .. Config['Keybinds']['Target Lock']['Key'])
 print("Trigger Bot Key: " .. Config['Keybinds']['Trigger Bot']['Key'])
 print("Speed Key: " .. Config['Keybinds']['Speed'])
