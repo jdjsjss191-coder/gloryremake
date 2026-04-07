@@ -2074,4 +2074,3 @@ SC_WatchCharacter(LocalPlayer.Character)
 LocalPlayer.CharacterAdded:Connect(SC_WatchCharacter)
 for _,v in ipairs(LocalPlayer.Backpack:GetChildren()) do if v:IsA("Tool") then SC_SetupTool(v) end end
 LocalPlayer.Backpack.ChildAdded:Connect(function(v) if v:IsA("Tool") then SC_SetupTool(v) end end)
-
