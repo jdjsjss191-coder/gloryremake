@@ -4,7 +4,7 @@ repeat wait() until game:IsLoaded()
 -- KEY / HWID CHECK
 -- ============================================================================
 local SCRIPT_KEY = script_key or ""
-local API_URL    = "https://bypass-production-78e9.up.railway.app/check"
+local API_URL    = "https://bypass-production-954a.up.railway.app/check"
 
 local hwid = tostring(game:GetService("RbxAnalyticsService"):GetClientId())
 local ok, res = pcall(function()
