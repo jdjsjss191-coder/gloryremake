@@ -1554,7 +1554,7 @@ local function PlaySelectedEmote()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return end
     local animator = hum:FindFirstChildOfClass("Animator")
-    if not animator then return end
+    if not animator then animator = Instance.new("Animator", hum) end
 
     if ActiveEmoteTrack then
         pcall(function() ActiveEmoteTrack:Stop(0.1) end)
@@ -1563,18 +1563,24 @@ local function PlaySelectedEmote()
 
     local animId = flags.emoteid or ""
     if animId == "" then return end
-    -- allow bare numbers too
     if not animId:find("rbxassetid://") then animId = "rbxassetid://" .. animId end
 
     local anim = Instance.new("Animation")
     anim.AnimationId = animId
+    anim.Parent = LocalPlayer  -- must be parented before LoadAnimation
 
-    local track = animator:LoadAnimation(anim)
+    local ok, track = pcall(function()
+        return animator:LoadAnimation(anim)
+    end)
+
+    anim:Destroy()
+
+    if not ok or not track then return end
+
     track.Priority = Enum.AnimationPriority.Action4
     track.Looped = true
     track:Play(0.1)
     ActiveEmoteTrack = track
-    anim:Destroy()
 
     track.Stopped:Connect(function()
         if ActiveEmoteTrack == track then ActiveEmoteTrack = nil end
