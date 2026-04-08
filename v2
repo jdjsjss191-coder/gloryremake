@@ -1567,7 +1567,7 @@ RunService.Heartbeat:Connect(function()
         local hrp = p.Character:FindFirstChild("HumanoidRootPart")
         if not hum or not hrp then continue end
         -- trigger on anyone at 11 hp or under
-        if hum.Health > 9 then continue end
+        if hum.Health > 11 then continue end
         -- skip if already stomped this down-state
         if StompedPlayers[p.UserId] then continue end
 
@@ -1603,7 +1603,7 @@ RunService.Heartbeat:Connect(function()
     for _, p in pairs(Players:GetPlayers()) do
         if p == LocalPlayer or not p.Character then continue end
         local hum = p.Character:FindFirstChildOfClass("Humanoid")
-        if hum and hum.Health > 9 then
+        if hum and hum.Health > 11 then
             StompedPlayers[p.UserId] = nil
         end
     end
