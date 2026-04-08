@@ -65,9 +65,8 @@ JumpSection:Toggle({  name="Super Jump",  pointer="superjump",    default=false,
 JumpSection:Keybind({ name="SJ Key",      pointer="superjumpkey", default=Enum.KeyCode.X, callback=function()end })
 JumpSection:Slider({  name="Power",       pointer="jumppower",    minimum=50, maximum=1000, default=260, callback=function()end })
 
-local AnimSection = MovementTab:Section({ name = "Animation Player", side = "left" })
-AnimSection:Box({ name="Emote ID", pointer="emoteid", placeholder="rbxassetid://...", type="string", callback=function(v) Library.flags.emoteid = v end })
-AnimSection:Keybind({ name="Play Emote Key", pointer="emotekey", default=Enum.KeyCode.H, callback=function()end })
+local StompSection = MovementTab:Section({ name = "Auto Stomp", side = "left" })
+StompSection:Toggle({ name="Auto Stomp", pointer="autostomp", default=false, callback=function()end })
 
 local VisualsTab = Window:Page({ name = "Visuals" })
 local ESPSection = VisualsTab:Section({ name = "ESP", side = "left" })
@@ -1544,67 +1543,55 @@ local function UpdateTarget()
 end
 
 -- ============================================================================
--- ANIMATION PLAYER
+-- AUTO STOMP
 -- ============================================================================
-local ActiveEmoteTrack = nil
+local StompInProgress = false
 
-local function PlaySelectedEmote()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    local animator = hum:FindFirstChildOfClass("Animator")
-    if not animator then animator = Instance.new("Animator", hum) end
-
-    if ActiveEmoteTrack then
-        pcall(function() ActiveEmoteTrack:Stop(0.1) end)
-        ActiveEmoteTrack = nil
-    end
-
-    local raw = flags.emoteid or ""
-    if raw == "" then return end
-    local num = tonumber(raw:match("%d+"))
-    if not num then return end
-
-    -- use InsertService to load the catalog emote asset and extract the animation id
-    local animId = nil
-    pcall(function()
-        local model = game:GetService("InsertService"):LoadAsset(num)
-        -- walk descendants to find an Animation object
-        for _, v in ipairs(model:GetDescendants()) do
-            if v:IsA("Animation") and v.AnimationId ~= "" then
-                animId = v.AnimationId
-                break
-            end
-        end
-        model:Destroy()
-    end)
-
-    -- fallback: treat the id as a direct animation id
-    if not animId then
-        animId = "rbxassetid://" .. num
-    end
-
-    local anim = Instance.new("Animation")
-    anim.AnimationId = animId
-    anim.Parent = LocalPlayer
-
-    local ok, track = pcall(function()
-        return animator:LoadAnimation(anim)
-    end)
-    anim:Destroy()
-
-    if not ok or not track then return end
-
-    track.Priority = Enum.AnimationPriority.Action4
-    track.Looped = true
-    track:Play(0.1)
-    ActiveEmoteTrack = track
-
-    track.Stopped:Connect(function()
-        if ActiveEmoteTrack == track then ActiveEmoteTrack = nil end
-    end)
+local function SimulateKeyPress(keyCode)
+    local vInput = Instance.new("InputObject")
+    vInput.KeyCode = keyCode
+    vInput.UserInputType = Enum.UserInputType.Keyboard
+    vInput.UserInputState = Enum.UserInputState.Begin
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, keyCode, false, game)
+    task.wait(0.07)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, keyCode, false, game)
 end
+
+RunService.Heartbeat:Connect(function()
+    if not flags.autostomp or StompInProgress then return end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p == LocalPlayer or not p.Character then continue end
+        local hum = p.Character:FindFirstChildOfClass("Humanoid")
+        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+        if not hum or not hrp then continue end
+        -- target is at 0 hp (knocked/dead)
+        if hum.Health > 0 then continue end
+
+        StompInProgress = true
+        local prevCF = myHRP.CFrame
+
+        -- tp on top of them
+        myHRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
+        task.wait(0.1)
+
+        -- press E twice
+        SimulateKeyPress(Enum.KeyCode.E)
+        task.wait(0.15)
+        SimulateKeyPress(Enum.KeyCode.E)
+        task.wait(0.15)
+
+        -- tp back
+        myHRP.CFrame = prevCF
+        task.wait(0.5) -- cooldown before next stomp
+        StompInProgress = false
+        break
+    end
+end)
 
 -- ============================================================================
 -- INPUT
@@ -1627,15 +1614,6 @@ UserInputService.InputBegan:Connect(function(input,processed)
     if flags.superjump and KeyMatches(input,"superjumpkey") then SuperJumpActive=not SuperJumpActive end
     -- Infinite Range: toggle enables it, keybind activates/deactivates
     if flags.infrange and KeyMatches(input,"infrangekey") then InfRangeActive=not InfRangeActive end
-    -- Animation Player: play selected emote
-    if KeyMatches(input,"emotekey") then
-        if ActiveEmoteTrack then
-            pcall(function() ActiveEmoteTrack:Stop(0.1) end)
-            ActiveEmoteTrack = nil
-        else
-            PlaySelectedEmote()
-        end
-    end
 end)
 
 -- ============================================================================
@@ -2151,10 +2129,7 @@ LocalPlayer.CharacterAdded:Connect(SC_WatchCharacter)
 for _,v in ipairs(LocalPlayer.Backpack:GetChildren()) do if v:IsA("Tool") then SC_SetupTool(v) end end
 LocalPlayer.Backpack.ChildAdded:Connect(function(v) if v:IsA("Tool") then SC_SetupTool(v) end end)
 
--- re-apply emote after respawn if one was active
+-- reset stomp state on respawn
 LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if flags.selectedemote and ActiveEmoteTrack == nil then return end
-    -- don't auto-replay on respawn, user must press key again
-    ActiveEmoteTrack = nil
+    StompInProgress = false
 end)
