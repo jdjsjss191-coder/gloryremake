@@ -1,9 +1,10 @@
 -- ============================================================================
--- VANTA UI  v2.0  |  vanta.cc aesthetic  |  full-featured Roblox UI library
+-- VANTA UI  v2.0  |  vanta.cc aesthetic  |  Roblox UI Library
+-- GitHub: put this file at the root of your repo
+-- Load:   local VantaUI = loadstring(game:HttpGet("RAW_URL"))()
 -- ============================================================================
 local VantaUI = {}; VantaUI.__index = VantaUI
 
--- services
 local TS  = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local RS  = game:GetService("RunService")
@@ -13,116 +14,95 @@ local PLS = game:GetService("Players")
 
 -- ── THEME ────────────────────────────────────────────────────────────────────
 local T = {
-    BG          = Color3.fromRGB(9,   9,  15),
-    BG2         = Color3.fromRGB(13,  13, 21),
-    BG3         = Color3.fromRGB(17,  17, 27),
-    BG4         = Color3.fromRGB(22,  22, 34),
-    Accent      = Color3.fromRGB(80,  140,255),
-    AccentDim   = Color3.fromRGB(40,  80, 180),
-    TextPri     = Color3.fromRGB(228, 228,240),
-    TextSub     = Color3.fromRGB(140, 140,160),
-    TextDim     = Color3.fromRGB(75,  75, 100),
-    Border      = Color3.fromRGB(32,  32, 52),
-    BorderLt    = Color3.fromRGB(52,  52, 78),
-    Green       = Color3.fromRGB(72,  210, 96),
-    Red         = Color3.fromRGB(215, 65,  65),
-    Yellow      = Color3.fromRGB(215, 175, 55),
+    BG        = Color3.fromRGB(9,9,15),
+    BG2       = Color3.fromRGB(13,13,21),
+    BG3       = Color3.fromRGB(17,17,27),
+    BG4       = Color3.fromRGB(22,22,34),
+    Accent    = Color3.fromRGB(80,140,255),
+    AccentDim = Color3.fromRGB(40,80,180),
+    TextPri   = Color3.fromRGB(228,228,240),
+    TextSub   = Color3.fromRGB(140,140,160),
+    TextDim   = Color3.fromRGB(75,75,100),
+    Border    = Color3.fromRGB(32,32,52),
+    BorderLt  = Color3.fromRGB(52,52,78),
+    Green     = Color3.fromRGB(72,210,96),
+    Red       = Color3.fromRGB(215,65,65),
+    Yellow    = Color3.fromRGB(215,175,55),
 }
 
--- ── UTILITY ──────────────────────────────────────────────────────────────────
-local function tw(obj, props, t, sty, dir, cb)
-    local a = TS:Create(obj, TweenInfo.new(t or .2, sty or Enum.EasingStyle.Quart, dir or Enum.EasingDirection.Out), props)
+-- ── HELPERS ──────────────────────────────────────────────────────────────────
+local function tw(o,p,t,s,d,cb)
+    local a=TS:Create(o,TweenInfo.new(t or .2,s or Enum.EasingStyle.Quart,d or Enum.EasingDirection.Out),p)
     a:Play(); if cb then a.Completed:Connect(cb) end; return a
 end
-local function sp(obj, props, cb)
-    local a = TS:Create(obj, TweenInfo.new(.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), props)
+local function sp(o,p,cb)
+    local a=TS:Create(o,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out),p)
     a:Play(); if cb then a.Completed:Connect(cb) end; return a
 end
-local function mk(cls, p, par)
-    local o = Instance.new(cls)
-    for k,v in pairs(p or {}) do pcall(function() o[k]=v end) end
-    if par then o.Parent = par end; return o
+local function mk(cls,props,par)
+    local o=Instance.new(cls)
+    for k,v in pairs(props or {}) do pcall(function() o[k]=v end) end
+    if par then o.Parent=par end; return o
 end
-local function corner(r, par) return mk("UICorner",{CornerRadius=UDim.new(0,r or 6)},par) end
-local function stroke(c, th, par)
+local function corner(r,par) return mk("UICorner",{CornerRadius=UDim.new(0,r or 6)},par) end
+local function stroke(c,th,par)
     return mk("UIStroke",{Color=c or T.Border,Thickness=th or 1,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},par)
 end
 local function pad(l,r,t,b,par)
     return mk("UIPadding",{PaddingLeft=UDim.new(0,l or 0),PaddingRight=UDim.new(0,r or 0),
         PaddingTop=UDim.new(0,t or 0),PaddingBottom=UDim.new(0,b or 0)},par)
 end
-local function list(dir,p,par)
-    return mk("UIListLayout",{FillDirection=dir or Enum.FillDirection.Vertical,
+local function vlist(p,par)
+    return mk("UIListLayout",{FillDirection=Enum.FillDirection.Vertical,
+        SortOrder=Enum.SortOrder.LayoutOrder,Padding=UDim.new(0,p or 0)},par)
+end
+local function hlist(p,par)
+    return mk("UIListLayout",{FillDirection=Enum.FillDirection.Horizontal,
         SortOrder=Enum.SortOrder.LayoutOrder,Padding=UDim.new(0,p or 0)},par)
 end
 local function grad(c0,c1,rot,par)
     return mk("UIGradient",{Color=ColorSequence.new(c0,c1),Rotation=rot or 90},par)
 end
-local function shadow(par, sz, tr)
+local function shadow(par,sz,tr)
     return mk("ImageLabel",{
         Size=UDim2.new(1,sz or 40,1,sz or 40),
         Position=UDim2.new(0,-(sz or 40)/2,0,-(sz or 40)/2),
-        BackgroundTransparency=1,
-        Image="rbxassetid://6014261993",
-        ImageColor3=Color3.new(0,0,0),
-        ImageTransparency=tr or .55,
-        ScaleType=Enum.ScaleType.Slice,
-        SliceCenter=Rect.new(49,49,450,450),
-        ZIndex=-1,
+        BackgroundTransparency=1,Image="rbxassetid://6014261993",
+        ImageColor3=Color3.new(0,0,0),ImageTransparency=tr or .55,
+        ScaleType=Enum.ScaleType.Slice,SliceCenter=Rect.new(49,49,450,450),ZIndex=-1,
     },par)
 end
 local function txsz(txt,sz,fnt)
     return TXS:GetTextSize(txt,sz or 13,fnt or Enum.Font.GothamMedium,Vector2.new(9999,9999))
 end
-local function lerp(a,b,t) return a+(b-a)*t end
 
--- ── NOTIFICATION SYSTEM ──────────────────────────────────────────────────────
-local _notifGui = mk("ScreenGui",{Name="VantaNotifs",ResetOnSpawn=false,
+-- ── NOTIFICATIONS ────────────────────────────────────────────────────────────
+local _ng=mk("ScreenGui",{Name="VantaNotifs",ResetOnSpawn=false,
     ZIndexBehavior=Enum.ZIndexBehavior.Sibling,IgnoreGuiInset=true})
-pcall(function() _notifGui.Parent=CG end)
-if not _notifGui.Parent then _notifGui.Parent=PLS.LocalPlayer:WaitForChild("PlayerGui") end
+pcall(function() _ng.Parent=CG end)
+if not _ng.Parent then _ng.Parent=PLS.LocalPlayer:WaitForChild("PlayerGui") end
+local _ns=mk("Frame",{Size=UDim2.new(0,280,1,0),Position=UDim2.new(1,-292,0,0),BackgroundTransparency=1},_ng)
+vlist(8,_ns); pad(0,0,14,0,_ns)
 
-local _notifStack = mk("Frame",{
-    Size=UDim2.new(0,280,1,0),
-    Position=UDim2.new(1,-292,0,0),
-    BackgroundTransparency=1,
-},_notifGui)
-list(Enum.FillDirection.Vertical,8,_notifStack)
-pad(0,0,14,0,_notifStack)
+function VantaUI.Notify(o)
+    o=o or {}
+    local title=o.title or "Vanta"; local desc=o.desc or ""
+    local dur=o.duration or 3.5; local nt=o.type or "info"
+    local ac=({info=T.Accent,success=T.Green,error=T.Red,warn=T.Yellow})[nt] or T.Accent
+    local ic=({info="ℹ",success="✓",error="✕",warn="⚠"})[nt] or "ℹ"
 
-function VantaUI.Notify(opts)
-    opts = opts or {}
-    local title    = opts.title    or "Vanta"
-    local desc     = opts.desc     or ""
-    local duration = opts.duration or 3.5
-    local ntype    = opts.type     or "info"
-    local acol = ({info=T.Accent,success=T.Green,error=T.Red,warn=T.Yellow})[ntype] or T.Accent
-    local ico  = ({info="ℹ",success="✓",error="✕",warn="⚠"})[ntype] or "ℹ"
-
-    local card = mk("Frame",{
-        Size=UDim2.new(1,0,0,66),
-        BackgroundColor3=T.BG3,
-        Position=UDim2.new(1,10,0,0),
-        ClipsDescendants=true,
-    },_notifStack)
+    local card=mk("Frame",{Size=UDim2.new(1,0,0,66),BackgroundColor3=T.BG3,
+        Position=UDim2.new(1,10,0,0),ClipsDescendants=true},_ns)
     corner(8,card); stroke(T.Border,1,card); shadow(card,18,.65)
 
-    -- left accent bar
     local bar=mk("Frame",{Size=UDim2.new(0,3,1,-12),Position=UDim2.new(0,0,0,6),
-        BackgroundColor3=acol,BorderSizePixel=0},card); corner(2,bar)
-
-    -- progress line
+        BackgroundColor3=ac,BorderSizePixel=0},card); corner(2,bar)
     local prog=mk("Frame",{Size=UDim2.new(1,0,0,2),Position=UDim2.new(0,0,1,-2),
-        BackgroundColor3=acol,BorderSizePixel=0},card)
-
-    -- icon badge
-    local ibadge=mk("Frame",{Size=UDim2.new(0,26,0,26),Position=UDim2.new(0,12,0,20),
-        BackgroundColor3=acol,BackgroundTransparency=0.82,BorderSizePixel=0},card)
-    corner(6,ibadge)
-    mk("TextLabel",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
-        Text=ico,TextColor3=acol,TextSize=13,Font=Enum.Font.GothamBold,
-        TextXAlignment=Enum.TextXAlignment.Center},ibadge)
-
+        BackgroundColor3=ac,BorderSizePixel=0},card)
+    local ib=mk("Frame",{Size=UDim2.new(0,26,0,26),Position=UDim2.new(0,12,0,20),
+        BackgroundColor3=ac,BackgroundTransparency=.82,BorderSizePixel=0},card); corner(6,ib)
+    mk("TextLabel",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text=ic,
+        TextColor3=ac,TextSize=13,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Center},ib)
     mk("TextLabel",{Size=UDim2.new(1,-52,0,18),Position=UDim2.new(0,46,0,8),
         BackgroundTransparency=1,Text=title,TextColor3=T.TextPri,
         TextSize=13,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left},card)
@@ -130,11 +110,9 @@ function VantaUI.Notify(opts)
         BackgroundTransparency=1,Text=desc,TextColor3=T.TextSub,
         TextSize=11,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true},card)
 
-    -- slide in
     sp(card,{Position=UDim2.new(0,0,0,0)})
-    tw(prog,{Size=UDim2.new(0,0,0,2)},duration,Enum.EasingStyle.Linear)
-
-    task.delay(duration,function()
+    tw(prog,{Size=UDim2.new(0,0,0,2)},dur,Enum.EasingStyle.Linear)
+    task.delay(dur,function()
         tw(card,{Position=UDim2.new(1,10,0,0)},.22,Enum.EasingStyle.Quart,Enum.EasingDirection.In,function()
             card:Destroy()
         end)
@@ -143,153 +121,113 @@ end
 
 -- ── CONSTRUCTOR ──────────────────────────────────────────────────────────────
 function VantaUI.new(opts)
-    opts = opts or {}
-    local self = setmetatable({},VantaUI)
+    opts=opts or {}
+    local self=setmetatable({},VantaUI)
     self.flags    = {}
     self._setters = {}
     self.toggled  = true
-    self.accent   = opts.accent    or T.Accent
-    self._title   = opts.title     or "Vanta"
-    self._sub     = opts.subtitle  or ".cc"
-    self._sx      = opts.sizeX     or 600
-    self._sy      = opts.sizeY     or 480
+    self.accent   = opts.accent   or T.Accent
+    self._title   = opts.title    or "Vanta"
+    self._sub     = opts.subtitle or ".cc"
+    self._sx      = opts.sizeX    or 600
+    self._sy      = opts.sizeY    or 480
     self._tabs    = {}
-    self._curTab  = nil
     self._busy    = false
 
-    self._gui = mk("ScreenGui",{
-        Name="VantaUI",ResetOnSpawn=false,
-        ZIndexBehavior=Enum.ZIndexBehavior.Sibling,IgnoreGuiInset=true,
-    })
+    self._gui=mk("ScreenGui",{Name="VantaUI",ResetOnSpawn=false,
+        ZIndexBehavior=Enum.ZIndexBehavior.Sibling,IgnoreGuiInset=true})
     pcall(function() self._gui.Parent=CG end)
     if not self._gui.Parent then self._gui.Parent=PLS.LocalPlayer:WaitForChild("PlayerGui") end
 
-    self:_build()
-    self:_drag()
-    self:_hotkey(opts.key or Enum.KeyCode.RightShift)
-    self:_open()
+    self:_buildWindow()
+    self:_setupDrag()
+    self:_setupHotkey(opts.key or Enum.KeyCode.RightShift)
+    self:_animateOpen()
     return self
 end
 
--- ── WINDOW BUILD ─────────────────────────────────────────────────────────────
-function VantaUI:_build()
-    local sx,sy = self._sx, self._sy
-
-    self._holder = mk("Frame",{
-        Size=UDim2.new(0,sx,0,sy),
-        Position=UDim2.new(.5,-sx/2,.5,-sy/2),
-        BackgroundTransparency=1,
-    },self._gui)
+-- ── WINDOW ───────────────────────────────────────────────────────────────────
+function VantaUI:_buildWindow()
+    local sx,sy=self._sx,self._sy
+    self._holder=mk("Frame",{Size=UDim2.new(0,sx,0,sy),
+        Position=UDim2.new(.5,-sx/2,.5,-sy/2),BackgroundTransparency=1},self._gui)
     shadow(self._holder,44,.58)
 
-    self._win = mk("Frame",{
-        Size=UDim2.new(1,0,1,0),
-        BackgroundColor3=T.BG,
-        BorderSizePixel=0,
-        ClipsDescendants=true,
-    },self._holder)
-    corner(10,self._win)
-    stroke(T.Border,1,self._win)
+    self._win=mk("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=T.BG,
+        BorderSizePixel=0,ClipsDescendants=true},self._holder)
+    corner(10,self._win); stroke(T.Border,1,self._win)
     grad(T.BG2,T.BG,135,self._win)
 
-    -- ── title bar
-    self._tbar = mk("Frame",{
-        Size=UDim2.new(1,0,0,46),
-        BackgroundColor3=T.BG2,
-        BorderSizePixel=0,ZIndex=5,
-    },self._win)
+    -- title bar
+    self._tbar=mk("Frame",{Size=UDim2.new(1,0,0,46),BackgroundColor3=T.BG2,
+        BorderSizePixel=0,ZIndex=5},self._win)
     grad(T.BG3,T.BG2,180,self._tbar)
-
-    -- bottom border
     mk("Frame",{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),
         BackgroundColor3=T.Border,BorderSizePixel=0,ZIndex=6},self._tbar)
 
     -- animated accent glow line
-    self._glow = mk("Frame",{Size=UDim2.new(0,0,0,2),Position=UDim2.new(0,0,1,-1),
+    self._glow=mk("Frame",{Size=UDim2.new(0,0,0,2),Position=UDim2.new(0,0,1,-1),
         BackgroundColor3=self.accent,BorderSizePixel=0,ZIndex=7},self._tbar)
     corner(1,self._glow)
-    task.delay(.08,function()
-        tw(self._glow,{Size=UDim2.new(.38,0,0,2)},.7,Enum.EasingStyle.Quart)
-    end)
+    task.delay(.08,function() tw(self._glow,{Size=UDim2.new(.38,0,0,2)},.7,Enum.EasingStyle.Quart) end)
 
-    -- logo dot
+    -- pulsing dot
     local dot=mk("Frame",{Size=UDim2.new(0,7,0,7),Position=UDim2.new(0,14,.5,-3.5),
         BackgroundColor3=self.accent,BorderSizePixel=0,ZIndex=6},self._tbar)
     corner(4,dot)
-    -- pulse dot
     task.spawn(function()
         while self._gui.Parent do
-            tw(dot,{BackgroundTransparency=0.5},.8,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut)
+            tw(dot,{BackgroundTransparency=.55},.8,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut)
             task.wait(.85)
             tw(dot,{BackgroundTransparency=0},.8,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut)
             task.wait(.85)
         end
     end)
 
-    -- title
-    mk("TextLabel",{
-        Size=UDim2.new(0,220,1,0),Position=UDim2.new(0,26,0,0),
+    -- title text
+    mk("TextLabel",{Size=UDim2.new(0,220,1,0),Position=UDim2.new(0,26,0,0),
         BackgroundTransparency=1,RichText=true,
         Text='<font color="rgb(228,228,240)">'..self._title..'</font>'
             ..'<font color="rgb(80,140,255)">'..self._sub..'</font>',
-        TextSize=15,Font=Enum.Font.GothamBold,
-        TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6,
-    },self._tbar)
+        TextSize=15,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6},self._tbar)
+    mk("TextLabel",{Size=UDim2.new(0,80,1,0),Position=UDim2.new(1,-120,0,0),
+        BackgroundTransparency=1,Text="v2.0",TextColor3=T.TextDim,
+        TextSize=11,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=6},self._tbar)
 
-    -- version tag
-    mk("TextLabel",{
-        Size=UDim2.new(0,80,1,0),Position=UDim2.new(1,-120,0,0),
-        BackgroundTransparency=1,Text="v2.0",
-        TextColor3=T.TextDim,TextSize=11,Font=Enum.Font.Gotham,
-        TextXAlignment=Enum.TextXAlignment.Right,ZIndex=6,
-    },self._tbar)
-
-    -- close btn
-    local cbtn=mk("TextButton",{
-        Size=UDim2.new(0,26,0,26),Position=UDim2.new(1,-36,.5,-13),
+    -- close button
+    local cb=mk("TextButton",{Size=UDim2.new(0,26,0,26),Position=UDim2.new(1,-36,.5,-13),
         BackgroundColor3=Color3.fromRGB(200,55,55),BackgroundTransparency=.65,
         Text="✕",TextColor3=Color3.fromRGB(255,255,255),TextSize=11,
-        Font=Enum.Font.GothamBold,ZIndex=7,AutoButtonColor=false,
-    },self._tbar)
-    corner(6,cbtn)
-    cbtn.MouseEnter:Connect(function() tw(cbtn,{BackgroundTransparency=.1},.12) end)
-    cbtn.MouseLeave:Connect(function() tw(cbtn,{BackgroundTransparency=.65},.12) end)
-    cbtn.MouseButton1Click:Connect(function() self:Toggle() end)
+        Font=Enum.Font.GothamBold,ZIndex=7,AutoButtonColor=false},self._tbar)
+    corner(6,cb)
+    cb.MouseEnter:Connect(function() tw(cb,{BackgroundTransparency=.1},.12) end)
+    cb.MouseLeave:Connect(function() tw(cb,{BackgroundTransparency=.65},.12) end)
+    cb.MouseButton1Click:Connect(function() self:Toggle() end)
 
-    -- ── tab bar
-    self._tabbar = mk("Frame",{
-        Size=UDim2.new(1,0,0,34),Position=UDim2.new(0,0,0,46),
-        BackgroundColor3=T.BG2,BorderSizePixel=0,ZIndex=5,ClipsDescendants=false,
-    },self._win)
+    -- tab bar
+    self._tabbar=mk("Frame",{Size=UDim2.new(1,0,0,34),Position=UDim2.new(0,0,0,46),
+        BackgroundColor3=T.BG2,BorderSizePixel=0,ZIndex=5},self._win)
     mk("Frame",{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),
         BackgroundColor3=T.Border,BorderSizePixel=0,ZIndex=6},self._tabbar)
-
-    self._tabbtns = mk("Frame",{
-        Size=UDim2.new(1,-16,1,0),Position=UDim2.new(0,8,0,0),
-        BackgroundTransparency=1,ZIndex=6,
-    },self._tabbar)
-    list(Enum.FillDirection.Horizontal,4,self._tabbtns)
+    self._tabbtns=mk("Frame",{Size=UDim2.new(1,-16,1,0),Position=UDim2.new(0,8,0,0),
+        BackgroundTransparency=1,ZIndex=6},self._tabbar)
+    hlist(4,self._tabbtns)
 
     -- sliding underline indicator
-    self._ind = mk("Frame",{
-        Size=UDim2.new(0,50,0,2),Position=UDim2.new(0,0,1,-2),
-        BackgroundColor3=self.accent,BorderSizePixel=0,ZIndex=8,
-    },self._tabbar)
+    self._ind=mk("Frame",{Size=UDim2.new(0,50,0,2),Position=UDim2.new(0,0,1,-2),
+        BackgroundColor3=self.accent,BorderSizePixel=0,ZIndex=8},self._tabbar)
     corner(1,self._ind)
 
-    -- ── content
-    self._content = mk("Frame",{
-        Size=UDim2.new(1,0,1,-80),Position=UDim2.new(0,0,0,80),
-        BackgroundTransparency=1,ClipsDescendants=true,ZIndex=3,
-    },self._win)
+    -- content area
+    self._content=mk("Frame",{Size=UDim2.new(1,0,1,-80),Position=UDim2.new(0,0,0,80),
+        BackgroundTransparency=1,ClipsDescendants=true,ZIndex=3},self._win)
 end
 
--- ── DRAG ─────────────────────────────────────────────────────────────────────
-function VantaUI:_drag()
-    local drag,ds,sp2
+function VantaUI:_setupDrag()
+    local drag,ds,sp0
     self._tbar.InputBegan:Connect(function(i)
         if i.UserInputType==Enum.UserInputType.MouseButton1 then
-            drag=true; ds=i.Position; sp2=self._holder.Position
+            drag=true; ds=i.Position; sp0=self._holder.Position
         end
     end)
     self._tbar.InputEnded:Connect(function(i)
@@ -298,26 +236,21 @@ function VantaUI:_drag()
     UIS.InputChanged:Connect(function(i)
         if drag and i.UserInputType==Enum.UserInputType.MouseMovement then
             local d=i.Position-ds
-            self._holder.Position=UDim2.new(sp2.X.Scale,sp2.X.Offset+d.X,sp2.Y.Scale,sp2.Y.Offset+d.Y)
+            self._holder.Position=UDim2.new(sp0.X.Scale,sp0.X.Offset+d.X,sp0.Y.Scale,sp0.Y.Offset+d.Y)
         end
     end)
 end
 
--- ── HOTKEY ───────────────────────────────────────────────────────────────────
-function VantaUI:_hotkey(key)
-    UIS.InputBegan:Connect(function(i,p)
-        if not p and i.KeyCode==key then self:Toggle() end
-    end)
+function VantaUI:_setupHotkey(key)
+    UIS.InputBegan:Connect(function(i,p) if not p and i.KeyCode==key then self:Toggle() end end)
 end
 
--- ── OPEN ANIMATION ───────────────────────────────────────────────────────────
-function VantaUI:_open()
+function VantaUI:_animateOpen()
     self._win.Size=UDim2.new(1,0,0,0)
     task.wait(.04)
     tw(self._win,{Size=UDim2.new(1,0,1,0)},.42,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
 end
 
--- ── TOGGLE ───────────────────────────────────────────────────────────────────
 function VantaUI:Toggle()
     self.toggled=not self.toggled
     if self.toggled then
@@ -331,7 +264,6 @@ function VantaUI:Toggle()
     end
 end
 
--- ── ACCENT ───────────────────────────────────────────────────────────────────
 function VantaUI:SetAccent(c)
     self.accent=c
     self._glow.BackgroundColor3=c
@@ -341,733 +273,521 @@ function VantaUI:SetAccent(c)
     end
 end
 
+function VantaUI:Initialize() return self end
+
+-- ── TAB SWITCH ───────────────────────────────────────────────────────────────
+function VantaUI:_switch(target)
+    if self._busy or target._on then return end
+    self._busy=true
+    for _,tab in pairs(self._tabs) do
+        if tab._on and tab~=target then
+            tab._on=false
+            tw(tab._btn,{TextColor3=T.TextDim},.18)
+            tw(tab._frame,{Position=UDim2.new(-1,0,0,0)},.2,Enum.EasingStyle.Quart,Enum.EasingDirection.In,function()
+                tab._frame.Visible=false; tab._frame.Position=UDim2.new(0,0,0,0)
+            end)
+        end
+    end
+    target._on=true; target._frame.Visible=true
+    target._frame.Position=UDim2.new(1,0,0,0)
+    tw(target._frame,{Position=UDim2.new(0,0,0,0)},.26,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
+    tw(target._btn,{TextColor3=self.accent},.18)
+    task.defer(function()
+        local ba=target._btn.AbsolutePosition; local ta=self._tabbar.AbsolutePosition
+        tw(self._ind,{Position=UDim2.new(0,ba.X-ta.X-8,1,-2),
+            Size=UDim2.new(0,target._btn.AbsoluteSize.X,0,2)},.22,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
+    end)
+    task.delay(.3,function() self._busy=false end)
+end
 -- ── TAB ──────────────────────────────────────────────────────────────────────
 function VantaUI:Tab(opts)
     opts=opts or {}
-    local name=opts.name or "Tab"
-    local icon=opts.icon or ""
-    local lib=self
-
+    local name=opts.name or "Tab"; local icon=opts.icon or ""; local lib=self
     local tab={}; tab._on=false; tab._lib=lib
-
     local label=(icon~="" and icon.."  " or "")..name
     local bw=txsz(label,13,Enum.Font.GothamMedium).X+22
-
-    tab._btn=mk("TextButton",{
-        Size=UDim2.new(0,bw,1,0),BackgroundTransparency=1,
-        Text=label,TextColor3=T.TextDim,TextSize=13,
-        Font=Enum.Font.GothamMedium,AutoButtonColor=false,ZIndex=7,
-    },self._tabbtns)
-
-    tab._frame=mk("Frame",{
-        Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
-        Visible=false,ZIndex=3,
-    },self._content)
-
-    -- two scrollable columns
-    tab._L=mk("ScrollingFrame",{
-        Size=UDim2.new(.5,-7,1,-12),Position=UDim2.new(0,6,0,6),
-        BackgroundTransparency=1,ScrollBarThickness=2,
-        ScrollBarImageColor3=T.BorderLt,CanvasSize=UDim2.new(0,0,0,0),
-        AutomaticCanvasSize=Enum.AutomaticSize.Y,BorderSizePixel=0,
-    },tab._frame)
-    list(Enum.FillDirection.Vertical,8,tab._L)
-
-    tab._R=mk("ScrollingFrame",{
-        Size=UDim2.new(.5,-7,1,-12),Position=UDim2.new(.5,3,0,6),
-        BackgroundTransparency=1,ScrollBarThickness=2,
-        ScrollBarImageColor3=T.BorderLt,CanvasSize=UDim2.new(0,0,0,0),
-        AutomaticCanvasSize=Enum.AutomaticSize.Y,BorderSizePixel=0,
-    },tab._frame)
-    list(Enum.FillDirection.Vertical,8,tab._R)
-
-    -- hover
-    tab._btn.MouseEnter:Connect(function()
-        if not tab._on then tw(tab._btn,{TextColor3=T.TextSub},.12) end
-    end)
-    tab._btn.MouseLeave:Connect(function()
-        if not tab._on then tw(tab._btn,{TextColor3=T.TextDim},.12) end
-    end)
+    tab._btn=mk("TextButton",{Size=UDim2.new(0,bw,1,0),BackgroundTransparency=1,
+        Text=label,TextColor3=T.TextDim,TextSize=13,Font=Enum.Font.GothamMedium,
+        AutoButtonColor=false,ZIndex=7},self._tabbtns)
+    tab._frame=mk("Frame",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Visible=false,ZIndex=3},self._content)
+    tab._L=mk("ScrollingFrame",{Size=UDim2.new(.5,-7,1,-12),Position=UDim2.new(0,6,0,6),
+        BackgroundTransparency=1,ScrollBarThickness=2,ScrollBarImageColor3=T.BorderLt,
+        CanvasSize=UDim2.new(0,0,0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y,BorderSizePixel=0},tab._frame)
+    vlist(8,tab._L)
+    tab._R=mk("ScrollingFrame",{Size=UDim2.new(.5,-7,1,-12),Position=UDim2.new(.5,3,0,6),
+        BackgroundTransparency=1,ScrollBarThickness=2,ScrollBarImageColor3=T.BorderLt,
+        CanvasSize=UDim2.new(0,0,0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y,BorderSizePixel=0},tab._frame)
+    vlist(8,tab._R)
+    tab._btn.MouseEnter:Connect(function() if not tab._on then tw(tab._btn,{TextColor3=T.TextSub},.12) end end)
+    tab._btn.MouseLeave:Connect(function() if not tab._on then tw(tab._btn,{TextColor3=T.TextDim},.12) end end)
     tab._btn.MouseButton1Click:Connect(function() lib:_switch(tab) end)
-
     table.insert(self._tabs,tab)
     if #self._tabs==1 then task.defer(function() lib:_switch(tab) end) end
 
-    -- ── SECTION ──────────────────────────────────────────────────────────
     function tab:Section(so)
-        so=so or {}
-        local sname=so.name or "Section"
-        local side=(so.side or "left"):lower()
-        local col=side=="right" and self._R or self._L
-
-        local sec={}; sec._lib=lib; sec._tab=self
-
-        sec._wrap=mk("Frame",{
-            Size=UDim2.new(1,0,0,28),BackgroundColor3=T.BG3,
-            BorderSizePixel=0,AutomaticSize=Enum.AutomaticSize.Y,
-        },col)
-        corner(8,sec._wrap)
-        stroke(T.Border,1,sec._wrap)
-
-        -- header
-        local hdr=mk("Frame",{Size=UDim2.new(1,0,0,28),BackgroundTransparency=1,ZIndex=2},sec._wrap)
-        local pip=mk("Frame",{Size=UDim2.new(0,3,0,13),Position=UDim2.new(0,8,.5,-6.5),
-            BackgroundColor3=lib.accent,BorderSizePixel=0,ZIndex=3},hdr)
-        corner(2,pip)
-        mk("TextLabel",{Size=UDim2.new(1,-20,1,0),Position=UDim2.new(0,18,0,0),
-            BackgroundTransparency=1,Text=sname:upper(),TextColor3=T.TextDim,
-            TextSize=10,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=3},hdr)
-
-        -- divider
-        mk("Frame",{Size=UDim2.new(1,-16,0,1),Position=UDim2.new(0,8,0,27),
-            BackgroundColor3=T.Border,BorderSizePixel=0,ZIndex=2},sec._wrap)
-
-        sec._body=mk("Frame",{
-            Size=UDim2.new(1,0,0,0),Position=UDim2.new(0,0,0,28),
-            BackgroundTransparency=1,AutomaticSize=Enum.AutomaticSize.Y,ZIndex=2,
-        },sec._wrap)
-        list(Enum.FillDirection.Vertical,2,sec._body)
-        pad(6,6,4,6,sec._body)
-
-        -- ── helpers shared by all elements ────────────────────────────────
-        local function baseRow(h)
-            local r=mk("Frame",{
-                Size=UDim2.new(1,0,0,h or 30),BackgroundColor3=T.BG4,
-                BackgroundTransparency=.45,BorderSizePixel=0,ZIndex=3,
-            },sec._body)
-            corner(6,r)
-            return r
-        end
-        local function rowHover(r)
-            r.MouseEnter:Connect(function() tw(r,{BackgroundTransparency=.2},.1) end)
-            r.MouseLeave:Connect(function() tw(r,{BackgroundTransparency=.45},.1) end)
-        end
-        local function rowLabel(r,txt,xoff)
-            return mk("TextLabel",{
-                Size=UDim2.new(1,-(xoff or 50),1,0),Position=UDim2.new(0,10,0,0),
-                BackgroundTransparency=1,Text=txt,TextColor3=T.TextSub,
-                TextSize=12,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=4,
-            },r)
-        end
-
-        -- ── TOGGLE ───────────────────────────────────────────────────────
-        function sec:Toggle(o)
-            o=o or {}
-            local nm=o.name or "Toggle"; local ptr=o.pointer or nm
-            local def=o.default or false; local cb=o.callback or function()end
-            local state=def; lib.flags[ptr]=state
-
-            local r=baseRow(30); rowHover(r)
-            local lbl=rowLabel(r,nm,52)
-            lbl.TextColor3=state and T.TextPri or T.TextSub
-
-            -- pill
-            local track=mk("Frame",{Size=UDim2.new(0,36,0,18),
-                Position=UDim2.new(1,-44,.5,-9),
-                BackgroundColor3=state and lib.accent or T.BG2,
-                BorderSizePixel=0,ZIndex=4},r)
-            corner(9,track)
-            local tstr=stroke(state and lib.accent or T.Border,1,track)
-
-            local thumb=mk("Frame",{
-                Size=UDim2.new(0,12,0,12),
-                Position=state and UDim2.new(1,-15,.5,-6) or UDim2.new(0,3,.5,-6),
-                BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=5},track)
-            corner(6,thumb)
-
-            local busy=false
-            local function flip()
-                if busy then return end; busy=true
-                state=not state; lib.flags[ptr]=state
-                sp(thumb,{Position=state and UDim2.new(1,-15,.5,-6) or UDim2.new(0,3,.5,-6)})
-                tw(track,{BackgroundColor3=state and lib.accent or T.BG2},.18)
-                tw(lbl,{TextColor3=state and T.TextPri or T.TextSub},.18)
-                tw(tstr,{Color=state and lib.accent or T.Border},.18)
-                tw(r,{BackgroundTransparency=.1},.08,nil,nil,function()
-                    tw(r,{BackgroundTransparency=.45},.18)
-                end)
-                task.delay(.06,function() busy=false; cb(state) end)
-            end
-
-            local btn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=6},r)
-            btn.MouseButton1Click:Connect(flip)
-
-            local t={}
-            function t:Set(v) if v~=state then flip() end end
-            lib._setters[ptr]=function(v) t:Set(v) end
-
-            function t:Colorpicker(co)
-                co=co or {}
-                return sec:Colorpicker(co, r)
-            end
-            return t
-        end
-
-        -- ── SLIDER ───────────────────────────────────────────────────────
-        function sec:Slider(o)
-            o=o or {}
-            local nm=o.name or "Slider"; local ptr=o.pointer or nm
-            local mn=o.minimum or 0; local mx=o.maximum or 100
-            local dec=o.decimals or 1; local suf=o.suffix or ""
-            local def=math.clamp(o.default or mn,mn,mx)
-            local cb=o.callback or function()end
-            local val=def; lib.flags[ptr]=val
-
-            local r=baseRow(44); rowHover(r)
-
-            -- top row: name + value
-            mk("TextLabel",{Size=UDim2.new(.6,0,0,20),Position=UDim2.new(0,10,0,2),
-                BackgroundTransparency=1,Text=nm,TextColor3=T.TextSub,
-                TextSize=12,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=4},r)
-            local vlbl=mk("TextLabel",{Size=UDim2.new(.4,-10,0,20),Position=UDim2.new(.6,0,0,2),
-                BackgroundTransparency=1,Text=tostring(val)..suf,TextColor3=lib.accent,
-                TextSize=12,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=4},r)
-
-            -- track
-            local trk=mk("Frame",{Size=UDim2.new(1,-20,0,6),Position=UDim2.new(0,10,0,28),
-                BackgroundColor3=T.BG2,BorderSizePixel=0,ZIndex=4,ClipsDescendants=true},r)
-            corner(3,trk)
-            local fill=mk("Frame",{Size=UDim2.new((val-mn)/(mx-mn),0,1,0),
-                BackgroundColor3=lib.accent,BorderSizePixel=0,ZIndex=5},trk)
-            corner(3,fill)
-            grad(lib.accent,T.AccentDim,0,fill)
-
-            -- thumb
-            local pct=(val-mn)/(mx-mn)
-            local thm=mk("Frame",{Size=UDim2.new(0,12,0,12),
-                Position=UDim2.new(pct,-6,.5,-6),
-                BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=6},trk)
-            corner(6,thm)
-
-            local sliding=false
-            local function upd(ix)
-                local rel=math.clamp((ix-trk.AbsolutePosition.X)/trk.AbsoluteSize.X,0,1)
-                local f=10^dec
-                val=math.floor((mn+(mx-mn)*rel)*f+.5)/f
-                val=math.clamp(val,mn,mx)
-                lib.flags[ptr]=val
-                local p=(val-mn)/(mx-mn)
-                fill.Size=UDim2.new(p,0,1,0)
-                thm.Position=UDim2.new(p,-6,.5,-6)
-                vlbl.Text=tostring(val)..suf
-                cb(val)
-            end
-
-            local hb=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=7},trk)
-            hb.InputBegan:Connect(function(i)
-                if i.UserInputType==Enum.UserInputType.MouseButton1 then
-                    sliding=true; upd(i.Position.X)
-                    sp(thm,{Size=UDim2.new(0,14,0,14),Position=UDim2.new((val-mn)/(mx-mn),-7,.5,-7)})
-                end
-            end)
-            hb.InputEnded:Connect(function(i)
-                if i.UserInputType==Enum.UserInputType.MouseButton1 then
-                    sliding=false
-                    sp(thm,{Size=UDim2.new(0,12,0,12),Position=UDim2.new((val-mn)/(mx-mn),-6,.5,-6)})
-                end
-            end)
-            UIS.InputChanged:Connect(function(i)
-                if sliding and i.UserInputType==Enum.UserInputType.MouseMovement then upd(i.Position.X) end
-            end)
-
-            local s={}
-            function s:Set(v)
-                val=math.clamp(v,mn,mx); lib.flags[ptr]=val
-                local p=(val-mn)/(mx-mn)
-                fill.Size=UDim2.new(p,0,1,0); thm.Position=UDim2.new(p,-6,.5,-6)
-                vlbl.Text=tostring(val)..suf; cb(val)
-            end
-            lib._setters[ptr]=function(v) s:Set(v) end
-            return s
-        end
-
+        local sec, bRow, bHover, bLabel = buildSection(self, so, lib)
+        _buildSectionExtras(sec, bRow, bHover, bLabel, lib)
         return sec
     end
 
     return tab
 end
 
-        -- ── DROPDOWN ─────────────────────────────────────────────────────
-        function sec:Dropdown(o)
-            o=o or {}
-            local nm=o.name or "Dropdown"; local ptr=o.pointer or nm
-            local opts2=o.options or {}; local def=o.default
-            local cb=o.callback or function()end
-            local chosen=def; lib.flags[ptr]=chosen
+-- ── SECTION (method on tab) ───────────────────────────────────────────────────
+-- We define Section separately and attach it to tab inside Tab() via a shared builder
+-- To keep all element methods properly scoped, Section is built as a standalone function
+-- that closes over `lib` passed in.
 
-            local r=baseRow(30); rowHover(r)
-            rowLabel(r,nm,0)
+local function buildSection(tab, so, lib)
+    so=so or {}
+    local sname=so.name or "Section"
+    local side=(so.side or "left"):lower()
+    local col=side=="right" and tab._R or tab._L
+    local sec={}; sec._lib=lib; sec._tab=tab
 
-            -- value display
-            local vdisp=mk("TextLabel",{
-                Size=UDim2.new(1,-10,1,0),Position=UDim2.new(0,0,0,0),
-                BackgroundTransparency=1,
-                Text=(chosen or "Select..."),
-                TextColor3=chosen and T.TextPri or T.TextDim,
-                TextSize=12,Font=Enum.Font.GothamMedium,
-                TextXAlignment=Enum.TextXAlignment.Right,ZIndex=4,
-            },r)
+    sec._wrap=mk("Frame",{Size=UDim2.new(1,0,0,28),BackgroundColor3=T.BG3,
+        BorderSizePixel=0,AutomaticSize=Enum.AutomaticSize.Y},col)
+    corner(8,sec._wrap); stroke(T.Border,1,sec._wrap)
 
-            -- arrow
-            local arrow=mk("TextLabel",{
-                Size=UDim2.new(0,16,1,0),Position=UDim2.new(1,-18,0,0),
-                BackgroundTransparency=1,Text="▾",TextColor3=T.TextDim,
-                TextSize=11,Font=Enum.Font.GothamBold,ZIndex=4,
-            },r)
+    local hdr=mk("Frame",{Size=UDim2.new(1,0,0,28),BackgroundTransparency=1,ZIndex=2},sec._wrap)
+    local pip=mk("Frame",{Size=UDim2.new(0,3,0,13),Position=UDim2.new(0,8,.5,-6.5),
+        BackgroundColor3=lib.accent,BorderSizePixel=0,ZIndex=3},hdr)
+    corner(2,pip)
+    mk("TextLabel",{Size=UDim2.new(1,-20,1,0),Position=UDim2.new(0,18,0,0),
+        BackgroundTransparency=1,Text=sname:upper(),TextColor3=T.TextDim,
+        TextSize=10,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=3},hdr)
+    mk("Frame",{Size=UDim2.new(1,-16,0,1),Position=UDim2.new(0,8,0,27),
+        BackgroundColor3=T.Border,BorderSizePixel=0,ZIndex=2},sec._wrap)
 
-            -- dropdown panel (hidden by default)
-            local panel=mk("Frame",{
-                Size=UDim2.new(1,0,0,0),Position=UDim2.new(0,0,1,2),
-                BackgroundColor3=T.BG3,BorderSizePixel=0,
-                ClipsDescendants=true,ZIndex=10,Visible=false,
-            },r)
-            corner(6,panel); stroke(T.Border,1,panel)
-            shadow(panel,12,.7)
+    sec._body=mk("Frame",{Size=UDim2.new(1,0,0,0),Position=UDim2.new(0,0,0,28),
+        BackgroundTransparency=1,AutomaticSize=Enum.AutomaticSize.Y,ZIndex=2},sec._wrap)
+    vlist(2,sec._body); pad(6,6,4,6,sec._body)
 
-            local plist=mk("Frame",{
-                Size=UDim2.new(1,0,0,0),BackgroundTransparency=1,
-                AutomaticSize=Enum.AutomaticSize.Y,ZIndex=10,
-            },panel)
-            list(Enum.FillDirection.Vertical,1,plist)
-            pad(4,4,4,4,plist)
-
-            local open=false
-            local function close()
-                open=false
-                tw(arrow,{Rotation=0},.15)
-                tw(panel,{Size=UDim2.new(1,0,0,0)},.18,Enum.EasingStyle.Quart,Enum.EasingDirection.In,function()
-                    panel.Visible=false
-                end)
-            end
-            local function openDD()
-                open=true; panel.Visible=true
-                tw(arrow,{Rotation=180},.15)
-                local th=#opts2*26+8
-                tw(panel,{Size=UDim2.new(1,0,0,th)},.22,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
-            end
-
-            -- build options
-            local optBtns={}
-            for _,opt in ipairs(opts2) do
-                local ob=mk("TextButton",{
-                    Size=UDim2.new(1,0,0,24),BackgroundColor3=T.BG4,
-                    BackgroundTransparency=opt==chosen and .2 or .8,
-                    Text=opt,TextColor3=opt==chosen and T.TextPri or T.TextSub,
-                    TextSize=12,Font=Enum.Font.GothamMedium,
-                    AutoButtonColor=false,ZIndex=11,
-                },plist)
-                corner(4,ob)
-                optBtns[opt]=ob
-                ob.MouseEnter:Connect(function()
-                    if opt~=chosen then tw(ob,{BackgroundTransparency=.5},.1) end
-                end)
-                ob.MouseLeave:Connect(function()
-                    if opt~=chosen then tw(ob,{BackgroundTransparency=.8},.1) end
-                end)
-                ob.MouseButton1Click:Connect(function()
-                    -- deselect old
-                    if chosen and optBtns[chosen] then
-                        tw(optBtns[chosen],{BackgroundTransparency=.8},.15)
-                        tw(optBtns[chosen],{TextColor3=T.TextSub},.15)
-                    end
-                    chosen=opt; lib.flags[ptr]=opt
-                    vdisp.Text=opt; vdisp.TextColor3=T.TextPri
-                    tw(ob,{BackgroundTransparency=.2},.15)
-                    tw(ob,{TextColor3=T.TextPri},.15)
-                    close(); cb(opt)
-                end)
-            end
-
-            local btn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5},r)
-            btn.MouseButton1Click:Connect(function()
-                if open then close() else openDD() end
-            end)
-
-            local s={}
-            function s:Set(v)
-                if chosen and optBtns[chosen] then
-                    tw(optBtns[chosen],{BackgroundTransparency=.8},.15)
-                    tw(optBtns[chosen],{TextColor3=T.TextSub},.15)
-                end
-                chosen=v; lib.flags[ptr]=v
-                vdisp.Text=v or "Select..."; vdisp.TextColor3=v and T.TextPri or T.TextDim
-                if v and optBtns[v] then
-                    tw(optBtns[v],{BackgroundTransparency=.2},.15)
-                    tw(optBtns[v],{TextColor3=T.TextPri},.15)
-                end
-                cb(v)
-            end
-            lib._setters[ptr]=function(v) s:Set(v) end
-            return s
-        end
-
-        -- ── KEYBIND ──────────────────────────────────────────────────────
-        function sec:Keybind(o)
-            o=o or {}
-            local nm=o.name or "Keybind"; local ptr=o.pointer or nm
-            local def=o.default; local cb=o.callback or function()end
-            local bl=o.blacklist or {}
-            table.insert(bl,Enum.UserInputType.Focus)
-
-            local key=def; lib.flags[ptr]=key
-            local binding=false
-
-            local r=baseRow(30); rowHover(r)
-            rowLabel(r,nm,80)
-
-            local kdisp=mk("TextButton",{
-                Size=UDim2.new(0,70,0,20),Position=UDim2.new(1,-76,.5,-10),
-                BackgroundColor3=T.BG2,BackgroundTransparency=.3,
-                Text=key and "["..tostring(key):gsub("Enum.KeyCode.","").."]" or "[NONE]",
-                TextColor3=T.TextSub,TextSize=11,Font=Enum.Font.GothamMedium,
-                AutoButtonColor=false,ZIndex=4,
-            },r)
-            corner(4,kdisp); stroke(T.Border,1,kdisp)
-
-            local conn
-            kdisp.MouseButton1Click:Connect(function()
-                if binding then return end
-                binding=true
-                kdisp.Text="[...]"; kdisp.TextColor3=lib.accent
-                tw(kdisp,{BackgroundTransparency=.1},.1)
-                if conn then conn:Disconnect() end
-                conn=UIS.InputBegan:Connect(function(i)
-                    local isKey=i.UserInputType==Enum.UserInputType.Keyboard
-                    local k=isKey and i.KeyCode or i.UserInputType
-                    if table.find(bl,k) then return end
-                    conn:Disconnect(); binding=false
-                    key=k; lib.flags[ptr]=k
-                    kdisp.Text="["..tostring(k):gsub("Enum.KeyCode.",""):gsub("Enum.UserInputType.","").."]"
-                    kdisp.TextColor3=T.TextSub
-                    tw(kdisp,{BackgroundTransparency=.3},.1)
-                    cb(k)
-                end)
-            end)
-
-            local s={}
-            function s:Set(k)
-                key=k; lib.flags[ptr]=k
-                kdisp.Text=k and "["..tostring(k):gsub("Enum.KeyCode.","").."]" or "[NONE]"
-                cb(k)
-            end
-            lib._setters[ptr]=function(v) s:Set(v) end
-            return s
-        end
-
-        -- ── BUTTON ───────────────────────────────────────────────────────
-        function sec:Button(o)
-            o=o or {}
-            local nm=o.name or "Button"; local cb=o.callback or function()end
-
-            local r=baseRow(30)
-            mk("TextLabel",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
-                Text=nm,TextColor3=T.TextSub,TextSize=12,Font=Enum.Font.GothamMedium,
-                TextXAlignment=Enum.TextXAlignment.Center,ZIndex=4},r)
-
-            local btn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5},r)
-            btn.MouseEnter:Connect(function()
-                tw(r,{BackgroundColor3=lib.accent,BackgroundTransparency=.7},.15)
-            end)
-            btn.MouseLeave:Connect(function()
-                tw(r,{BackgroundColor3=T.BG4,BackgroundTransparency=.45},.15)
-            end)
-            btn.MouseButton1Click:Connect(function()
-                tw(r,{BackgroundTransparency=.1},.08,nil,nil,function()
-                    tw(r,{BackgroundTransparency=.45},.2)
-                end)
-                cb()
-            end)
-        end
-
-        -- ── LABEL ────────────────────────────────────────────────────────
-        function sec:Label(o)
-            o=o or {}
-            local txt=o.text or o.name or ""
-            local lbl=mk("TextLabel",{
-                Size=UDim2.new(1,0,0,22),BackgroundTransparency=1,
-                Text=txt,TextColor3=T.TextDim,TextSize=11,
-                Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=3,
-            },sec._body)
-            local t={}
-            function t:Set(v) lbl.Text=v end
-            return t
-        end
-
-        -- ── COLORPICKER (standalone row) ─────────────────────────────────
-        function sec:Colorpicker(o, _parentRow)
-            o=o or {}
-            local nm=o.name or "Color"; local ptr=o.pointer or nm
-            local def=o.default or Color3.fromRGB(255,255,255)
-            local cb=o.callback or function()end
-            lib.flags[ptr]=def
-
-            local r=_parentRow or baseRow(30)
-            if not _parentRow then rowHover(r) end
-
-            -- color swatch
-            local swatch=mk("Frame",{
-                Size=UDim2.new(0,18,0,12),Position=UDim2.new(1,-(_parentRow and 8 or 44),.5,-6),
-                BackgroundColor3=def,BorderSizePixel=0,ZIndex=5,
-            },r)
-            corner(3,swatch); stroke(T.Border,1,swatch)
-
-            if not _parentRow then
-                mk("TextLabel",{Size=UDim2.new(1,-50,1,0),Position=UDim2.new(0,10,0,0),
-                    BackgroundTransparency=1,Text=nm,TextColor3=T.TextSub,
-                    TextSize=12,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=4},r)
-            end
-
-            -- picker popup
-            local popup=mk("Frame",{
-                Size=UDim2.new(0,180,0,0),
-                Position=UDim2.new(1,-182,1,4),
-                BackgroundColor3=T.BG3,BorderSizePixel=0,
-                ClipsDescendants=false,ZIndex=20,Visible=false,
-            },r)
-            corner(8,popup); stroke(T.BorderLt,1,popup); shadow(popup,16,.7)
-
-            local popOpen=false
-            local function closePopup()
-                popOpen=false
-                tw(popup,{Size=UDim2.new(0,180,0,0)},.18,Enum.EasingStyle.Quart,Enum.EasingDirection.In,function()
-                    popup.Visible=false
-                end)
-            end
-            local function openPopup()
-                popOpen=true; popup.Visible=true
-                tw(popup,{Size=UDim2.new(0,180,0,168)},.25,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
-            end
-
-            -- saturation/value field
-            local sv=mk("ImageLabel",{
-                Size=UDim2.new(1,-8,0,110),Position=UDim2.new(0,4,0,4),
-                BackgroundColor3=def,BorderSizePixel=0,
-                Image="rbxassetid://8630797271",ZIndex=21,
-            },popup)
-            corner(4,sv); stroke(T.Border,1,sv)
-
-            local svPicker=mk("Frame",{Size=UDim2.new(0,8,0,8),
-                BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=22},sv)
-            corner(4,svPicker)
-
-            -- hue bar
-            local hueBar=mk("ImageLabel",{
-                Size=UDim2.new(0,12,0,110),Position=UDim2.new(1,-16,0,4),
-                BackgroundColor3=Color3.fromRGB(255,0,0),BorderSizePixel=0,
-                Image="rbxassetid://8630799159",ScaleType=Enum.ScaleType.Crop,ZIndex=21,
-            },popup)
-            corner(3,hueBar); stroke(T.Border,1,hueBar)
-
-            local huePicker=mk("Frame",{Size=UDim2.new(1,0,0,2),
-                BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=22},hueBar)
-
-            -- hex input
-            local hexBox=mk("TextBox",{
-                Size=UDim2.new(1,-8,0,20),Position=UDim2.new(0,4,0,118),
-                BackgroundColor3=T.BG2,BackgroundTransparency=.3,
-                Text=string.format("#%02X%02X%02X",def.R*255,def.G*255,def.B*255),
-                TextColor3=T.TextPri,TextSize=11,Font=Enum.Font.GothamMedium,
-                PlaceholderText="#RRGGBB",ZIndex=21,BorderSizePixel=0,
-            },popup)
-            corner(4,hexBox); stroke(T.Border,1,hexBox)
-            pad(6,0,0,0,hexBox)
-
-            -- rainbow toggle
-            local rbRow=mk("TextButton",{
-                Size=UDim2.new(1,-8,0,20),Position=UDim2.new(0,4,0,142),
-                BackgroundColor3=T.BG2,BackgroundTransparency=.3,
-                Text="🌈  Rainbow",TextColor3=T.TextSub,TextSize=11,
-                Font=Enum.Font.GothamMedium,AutoButtonColor=false,ZIndex=21,
-            },popup)
-            corner(4,rbRow)
-
-            local hue,sat,val2=def:ToHSV()
-            local rainbow=false; local rbConn
-
-            local function applyColor(c)
-                lib.flags[ptr]=c; swatch.BackgroundColor3=c
-                sv.BackgroundColor3=Color3.fromHSV(hue,1,1)
-                hexBox.Text=string.format("#%02X%02X%02X",math.floor(c.R*255+.5),math.floor(c.G*255+.5),math.floor(c.B*255+.5))
-                cb(c)
-            end
-            local function rebuild()
-                local c=Color3.fromHSV(hue,sat,val2)
-                svPicker.Position=UDim2.new(sat,-4,1-val2,-4)
-                huePicker.Position=UDim2.new(0,0,1-hue,-1)
-                applyColor(c)
-            end
-            rebuild()
-
-            -- sv drag
-            local svDrag=false
-            sv.InputBegan:Connect(function(i)
-                if i.UserInputType==Enum.UserInputType.MouseButton1 then
-                    svDrag=true
-                    sat=math.clamp((i.Position.X-sv.AbsolutePosition.X)/sv.AbsoluteSize.X,0,1)
-                    val2=1-math.clamp((i.Position.Y-sv.AbsolutePosition.Y)/sv.AbsoluteSize.Y,0,1)
-                    rebuild()
-                end
-            end)
-            sv.InputEnded:Connect(function(i)
-                if i.UserInputType==Enum.UserInputType.MouseButton1 then svDrag=false end
-            end)
-            UIS.InputChanged:Connect(function(i)
-                if svDrag and i.UserInputType==Enum.UserInputType.MouseMovement then
-                    sat=math.clamp((i.Position.X-sv.AbsolutePosition.X)/sv.AbsoluteSize.X,0,1)
-                    val2=1-math.clamp((i.Position.Y-sv.AbsolutePosition.Y)/sv.AbsoluteSize.Y,0,1)
-                    rebuild()
-                end
-            end)
-
-            -- hue drag
-            local hueDrag=false
-            hueBar.InputBegan:Connect(function(i)
-                if i.UserInputType==Enum.UserInputType.MouseButton1 then
-                    hueDrag=true
-                    hue=1-math.clamp((i.Position.Y-hueBar.AbsolutePosition.Y)/hueBar.AbsoluteSize.Y,0,1)
-                    rebuild()
-                end
-            end)
-            hueBar.InputEnded:Connect(function(i)
-                if i.UserInputType==Enum.UserInputType.MouseButton1 then hueDrag=false end
-            end)
-            UIS.InputChanged:Connect(function(i)
-                if hueDrag and i.UserInputType==Enum.UserInputType.MouseMovement then
-                    hue=1-math.clamp((i.Position.Y-hueBar.AbsolutePosition.Y)/hueBar.AbsoluteSize.Y,0,1)
-                    rebuild()
-                end
-            end)
-
-            -- hex input
-            hexBox.FocusLost:Connect(function()
-                local hex=hexBox.Text:gsub("#","")
-                if #hex==6 then
-                    local r2=tonumber(hex:sub(1,2),16)
-                    local g2=tonumber(hex:sub(3,4),16)
-                    local b2=tonumber(hex:sub(5,6),16)
-                    if r2 and g2 and b2 then
-                        local c=Color3.fromRGB(r2,g2,b2)
-                        hue,sat,val2=c:ToHSV(); rebuild()
-                    end
-                end
-            end)
-
-            -- rainbow
-            rbRow.MouseButton1Click:Connect(function()
-                rainbow=not rainbow
-                tw(rbRow,{TextColor3=rainbow and lib.accent or T.TextSub},.15)
-                if rainbow then
-                    rbConn=RS.Heartbeat:Connect(function()
-                        if not rainbow then rbConn:Disconnect(); return end
-                        hue=(hue+.002)%1; rebuild()
-                    end)
-                elseif rbConn then rbConn:Disconnect() end
-            end)
-
-            -- open/close on swatch click
-            local swBtn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=6},swatch)
-            swBtn.MouseButton1Click:Connect(function()
-                if popOpen then closePopup() else openPopup() end
-            end)
-
-            local s={}
-            function s:Set(c)
-                hue,sat,val2=c:ToHSV(); rebuild()
-            end
-            lib._setters[ptr]=function(v) s:Set(v) end
-            return s
-        end
-
-        return sec
-    end -- end Section
-
-    return tab
-end -- end Tab
-
--- ── TAB SWITCH ───────────────────────────────────────────────────────────────
-function VantaUI:_switch(target)
-    if self._busy or target._on then return end
-    self._busy=true
-
-    for _,tab in pairs(self._tabs) do
-        if tab._on and tab~=target then
-            tab._on=false
-            tw(tab._btn,{TextColor3=T.TextDim},.18)
-            tw(tab._frame,{Position=UDim2.new(-1,0,0,0)},.2,Enum.EasingStyle.Quart,Enum.EasingDirection.In,function()
-                tab._frame.Visible=false
-                tab._frame.Position=UDim2.new(0,0,0,0)
-            end)
-        end
+    -- shared row helpers (local to this section closure)
+    local function baseRow(h)
+        local r=mk("Frame",{Size=UDim2.new(1,0,0,h or 30),BackgroundColor3=T.BG4,
+            BackgroundTransparency=.45,BorderSizePixel=0,ZIndex=3},sec._body)
+        corner(6,r); return r
+    end
+    local function rowHover(r)
+        r.MouseEnter:Connect(function() tw(r,{BackgroundTransparency=.2},.1) end)
+        r.MouseLeave:Connect(function() tw(r,{BackgroundTransparency=.45},.1) end)
+    end
+    local function rowLabel(r,txt,xoff)
+        return mk("TextLabel",{Size=UDim2.new(1,-(xoff or 50),1,0),Position=UDim2.new(0,10,0,0),
+            BackgroundTransparency=1,Text=txt,TextColor3=T.TextSub,
+            TextSize=12,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=4},r)
     end
 
-    target._on=true
-    target._frame.Visible=true
-    target._frame.Position=UDim2.new(1,0,0,0)
-    tw(target._frame,{Position=UDim2.new(0,0,0,0)},.26,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
-    tw(target._btn,{TextColor3=self.accent},.18)
+    -- ── TOGGLE ───────────────────────────────────────────────────────────────
+    function sec:Toggle(o)
+        o=o or {}
+        local nm=o.name or "Toggle"; local ptr=o.pointer or nm
+        local def=o.default or false; local cb=o.callback or function()end
+        local state=def; lib.flags[ptr]=state
 
-    -- slide indicator to button
-    task.defer(function()
-        local ba=target._btn.AbsolutePosition
-        local ta=self._tabbar.AbsolutePosition
-        local rx=ba.X-ta.X-8
-        tw(self._ind,{
-            Position=UDim2.new(0,rx,1,-2),
-            Size=UDim2.new(0,target._btn.AbsoluteSize.X,0,2),
-        },.22,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
-    end)
+        local r=baseRow(30); rowHover(r)
+        local lbl=rowLabel(r,nm,52)
+        lbl.TextColor3=state and T.TextPri or T.TextSub
 
-    task.delay(.3,function() self._busy=false end)
+        local track=mk("Frame",{Size=UDim2.new(0,36,0,18),Position=UDim2.new(1,-44,.5,-9),
+            BackgroundColor3=state and lib.accent or T.BG2,BorderSizePixel=0,ZIndex=4},r)
+        corner(9,track)
+        local tstr=stroke(state and lib.accent or T.Border,1,track)
+        local thumb=mk("Frame",{Size=UDim2.new(0,12,0,12),
+            Position=state and UDim2.new(1,-15,.5,-6) or UDim2.new(0,3,.5,-6),
+            BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=5},track)
+        corner(6,thumb)
+
+        local busy=false
+        local function flip()
+            if busy then return end; busy=true
+            state=not state; lib.flags[ptr]=state
+            sp(thumb,{Position=state and UDim2.new(1,-15,.5,-6) or UDim2.new(0,3,.5,-6)})
+            tw(track,{BackgroundColor3=state and lib.accent or T.BG2},.18)
+            tw(lbl,{TextColor3=state and T.TextPri or T.TextSub},.18)
+            tw(tstr,{Color=state and lib.accent or T.Border},.18)
+            tw(r,{BackgroundTransparency=.1},.08,nil,nil,function() tw(r,{BackgroundTransparency=.45},.18) end)
+            task.delay(.06,function() busy=false; cb(state) end)
+        end
+
+        local btn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=6},r)
+        btn.MouseButton1Click:Connect(flip)
+
+        local t={}
+        function t:Set(v) if v~=state then flip() end end
+        lib._setters[ptr]=function(v) t:Set(v) end
+        function t:Colorpicker(co) co=co or {}; return sec:Colorpicker(co,r) end
+        return t
+    end
+
+    -- ── SLIDER ───────────────────────────────────────────────────────────────
+    function sec:Slider(o)
+        o=o or {}
+        local nm=o.name or "Slider"; local ptr=o.pointer or nm
+        local mn=o.minimum or 0; local mx=o.maximum or 100
+        local dec=o.decimals or 1; local suf=o.suffix or ""
+        local def=math.clamp(o.default or mn,mn,mx)
+        local cb=o.callback or function()end
+        local val=def; lib.flags[ptr]=val
+
+        local r=baseRow(44); rowHover(r)
+        mk("TextLabel",{Size=UDim2.new(.6,0,0,20),Position=UDim2.new(0,10,0,2),
+            BackgroundTransparency=1,Text=nm,TextColor3=T.TextSub,
+            TextSize=12,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=4},r)
+        local vlbl=mk("TextLabel",{Size=UDim2.new(.4,-10,0,20),Position=UDim2.new(.6,0,0,2),
+            BackgroundTransparency=1,Text=tostring(val)..suf,TextColor3=lib.accent,
+            TextSize=12,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=4},r)
+
+        local trk=mk("Frame",{Size=UDim2.new(1,-20,0,6),Position=UDim2.new(0,10,0,28),
+            BackgroundColor3=T.BG2,BorderSizePixel=0,ZIndex=4,ClipsDescendants=true},r)
+        corner(3,trk)
+        local fill=mk("Frame",{Size=UDim2.new((val-mn)/(mx-mn),0,1,0),
+            BackgroundColor3=lib.accent,BorderSizePixel=0,ZIndex=5},trk)
+        corner(3,fill); grad(lib.accent,T.AccentDim,0,fill)
+        local thm=mk("Frame",{Size=UDim2.new(0,12,0,12),
+            Position=UDim2.new((val-mn)/(mx-mn),-6,.5,-6),
+            BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=6},trk)
+        corner(6,thm)
+
+        local sliding=false
+        local function upd(ix)
+            local rel=math.clamp((ix-trk.AbsolutePosition.X)/trk.AbsoluteSize.X,0,1)
+            local f=10^dec; val=math.floor((mn+(mx-mn)*rel)*f+.5)/f; val=math.clamp(val,mn,mx)
+            lib.flags[ptr]=val; local p=(val-mn)/(mx-mn)
+            fill.Size=UDim2.new(p,0,1,0); thm.Position=UDim2.new(p,-6,.5,-6)
+            vlbl.Text=tostring(val)..suf; cb(val)
+        end
+        local hb=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=7},trk)
+        hb.InputBegan:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.MouseButton1 then
+                sliding=true; upd(i.Position.X)
+                sp(thm,{Size=UDim2.new(0,14,0,14),Position=UDim2.new((val-mn)/(mx-mn),-7,.5,-7)})
+            end
+        end)
+        hb.InputEnded:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.MouseButton1 then
+                sliding=false
+                sp(thm,{Size=UDim2.new(0,12,0,12),Position=UDim2.new((val-mn)/(mx-mn),-6,.5,-6)})
+            end
+        end)
+        UIS.InputChanged:Connect(function(i)
+            if sliding and i.UserInputType==Enum.UserInputType.MouseMovement then upd(i.Position.X) end
+        end)
+        local s={}
+        function s:Set(v)
+            val=math.clamp(v,mn,mx); lib.flags[ptr]=val; local p=(val-mn)/(mx-mn)
+            fill.Size=UDim2.new(p,0,1,0); thm.Position=UDim2.new(p,-6,.5,-6)
+            vlbl.Text=tostring(val)..suf; cb(val)
+        end
+        lib._setters[ptr]=function(v) s:Set(v) end; return s
+    end
+
+    return sec, baseRow, rowHover, rowLabel
+end
+
+-- continue buildSection — Dropdown, Keybind, Button, Label, Colorpicker
+-- These are injected into sec inside buildSection via a second pass
+-- We extend buildSection by appending more methods to sec before returning
+
+local _buildSectionExtras = function(sec, baseRow, rowHover, rowLabel, lib)
+
+    -- ── DROPDOWN ─────────────────────────────────────────────────────────────
+    function sec:Dropdown(o)
+        o=o or {}
+        local nm=o.name or "Dropdown"; local ptr=o.pointer or nm
+        local opts=o.options or {}; local def=o.default
+        local cb=o.callback or function()end
+        local chosen=def; lib.flags[ptr]=chosen
+
+        local r=baseRow(30); rowHover(r)
+        rowLabel(r,nm,110)
+        local vdisp=mk("TextLabel",{Size=UDim2.new(1,-28,1,0),Position=UDim2.new(0,0,0,0),
+            BackgroundTransparency=1,Text=chosen or "Select...",
+            TextColor3=chosen and T.TextPri or T.TextDim,
+            TextSize=12,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=4},r)
+        local arrow=mk("TextLabel",{Size=UDim2.new(0,16,1,0),Position=UDim2.new(1,-18,0,0),
+            BackgroundTransparency=1,Text="▾",TextColor3=T.TextDim,
+            TextSize=11,Font=Enum.Font.GothamBold,ZIndex=4},r)
+
+        local panel=mk("Frame",{Size=UDim2.new(1,0,0,0),Position=UDim2.new(0,0,1,2),
+            BackgroundColor3=T.BG3,BorderSizePixel=0,ClipsDescendants=true,ZIndex=10,Visible=false},r)
+        corner(6,panel); stroke(T.Border,1,panel); shadow(panel,12,.7)
+        local plist=mk("Frame",{Size=UDim2.new(1,0,0,0),BackgroundTransparency=1,
+            AutomaticSize=Enum.AutomaticSize.Y,ZIndex=10},panel)
+        vlist(1,plist); pad(4,4,4,4,plist)
+
+        local open=false
+        local function closeDD()
+            open=false; tw(arrow,{Rotation=0},.15)
+            tw(panel,{Size=UDim2.new(1,0,0,0)},.18,Enum.EasingStyle.Quart,Enum.EasingDirection.In,function()
+                panel.Visible=false
+            end)
+        end
+        local function openDD()
+            open=true; panel.Visible=true; tw(arrow,{Rotation=180},.15)
+            tw(panel,{Size=UDim2.new(1,0,0,#opts*26+8)},.22,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
+        end
+
+        local optBtns={}
+        for _,opt in ipairs(opts) do
+            local ob=mk("TextButton",{Size=UDim2.new(1,0,0,24),BackgroundColor3=T.BG4,
+                BackgroundTransparency=opt==chosen and .2 or .8,Text=opt,
+                TextColor3=opt==chosen and T.TextPri or T.TextSub,
+                TextSize=12,Font=Enum.Font.GothamMedium,AutoButtonColor=false,ZIndex=11},plist)
+            corner(4,ob); optBtns[opt]=ob
+            ob.MouseEnter:Connect(function() if opt~=chosen then tw(ob,{BackgroundTransparency=.5},.1) end end)
+            ob.MouseLeave:Connect(function() if opt~=chosen then tw(ob,{BackgroundTransparency=.8},.1) end end)
+            ob.MouseButton1Click:Connect(function()
+                if chosen and optBtns[chosen] then
+                    tw(optBtns[chosen],{BackgroundTransparency=.8,TextColor3=T.TextSub},.15)
+                end
+                chosen=opt; lib.flags[ptr]=opt
+                vdisp.Text=opt; vdisp.TextColor3=T.TextPri
+                tw(ob,{BackgroundTransparency=.2,TextColor3=T.TextPri},.15)
+                closeDD(); cb(opt)
+            end)
+        end
+        local btn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5},r)
+        btn.MouseButton1Click:Connect(function() if open then closeDD() else openDD() end end)
+
+        local s={}
+        function s:Set(v)
+            if chosen and optBtns[chosen] then tw(optBtns[chosen],{BackgroundTransparency=.8,TextColor3=T.TextSub},.15) end
+            chosen=v; lib.flags[ptr]=v
+            vdisp.Text=v or "Select..."; vdisp.TextColor3=v and T.TextPri or T.TextDim
+            if v and optBtns[v] then tw(optBtns[v],{BackgroundTransparency=.2,TextColor3=T.TextPri},.15) end
+            cb(v)
+        end
+        lib._setters[ptr]=function(v) s:Set(v) end; return s
+    end
+
+    -- ── KEYBIND ──────────────────────────────────────────────────────────────
+    function sec:Keybind(o)
+        o=o or {}
+        local nm=o.name or "Keybind"; local ptr=o.pointer or nm
+        local def=o.default; local cb=o.callback or function()end
+        local bl=o.blacklist or {}; table.insert(bl,Enum.UserInputType.Focus)
+        local key=def; lib.flags[ptr]=key; local binding=false
+
+        local r=baseRow(30); rowHover(r); rowLabel(r,nm,80)
+        local kdisp=mk("TextButton",{Size=UDim2.new(0,70,0,20),Position=UDim2.new(1,-76,.5,-10),
+            BackgroundColor3=T.BG2,BackgroundTransparency=.3,
+            Text=key and "["..tostring(key):gsub("Enum.KeyCode.","").."]" or "[NONE]",
+            TextColor3=T.TextSub,TextSize=11,Font=Enum.Font.GothamMedium,
+            AutoButtonColor=false,ZIndex=4},r)
+        corner(4,kdisp); stroke(T.Border,1,kdisp)
+
+        local conn
+        kdisp.MouseButton1Click:Connect(function()
+            if binding then return end; binding=true
+            kdisp.Text="[...]"; kdisp.TextColor3=lib.accent; tw(kdisp,{BackgroundTransparency=.1},.1)
+            if conn then conn:Disconnect() end
+            conn=UIS.InputBegan:Connect(function(i)
+                local isKey=i.UserInputType==Enum.UserInputType.Keyboard
+                local k=isKey and i.KeyCode or i.UserInputType
+                if table.find(bl,k) then return end
+                conn:Disconnect(); binding=false; key=k; lib.flags[ptr]=k
+                kdisp.Text="["..tostring(k):gsub("Enum.KeyCode.",""):gsub("Enum.UserInputType.","").."]"
+                kdisp.TextColor3=T.TextSub; tw(kdisp,{BackgroundTransparency=.3},.1); cb(k)
+            end)
+        end)
+        local s={}
+        function s:Set(k)
+            key=k; lib.flags[ptr]=k
+            kdisp.Text=k and "["..tostring(k):gsub("Enum.KeyCode.","").."]" or "[NONE]"; cb(k)
+        end
+        lib._setters[ptr]=function(v) s:Set(v) end; return s
+    end
+
+    -- ── BUTTON ───────────────────────────────────────────────────────────────
+    function sec:Button(o)
+        o=o or {}
+        local nm=o.name or "Button"; local cb=o.callback or function()end
+        local r=baseRow(30)
+        mk("TextLabel",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text=nm,
+            TextColor3=T.TextSub,TextSize=12,Font=Enum.Font.GothamMedium,
+            TextXAlignment=Enum.TextXAlignment.Center,ZIndex=4},r)
+        local btn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5},r)
+        btn.MouseEnter:Connect(function() tw(r,{BackgroundColor3=lib.accent,BackgroundTransparency=.7},.15) end)
+        btn.MouseLeave:Connect(function() tw(r,{BackgroundColor3=T.BG4,BackgroundTransparency=.45},.15) end)
+        btn.MouseButton1Click:Connect(function()
+            tw(r,{BackgroundTransparency=.1},.08,nil,nil,function() tw(r,{BackgroundTransparency=.45},.2) end)
+            cb()
+        end)
+    end
+
+    -- ── LABEL ────────────────────────────────────────────────────────────────
+    function sec:Label(o)
+        o=o or {}
+        local lbl=mk("TextLabel",{Size=UDim2.new(1,0,0,22),BackgroundTransparency=1,
+            Text=o.text or o.name or "",TextColor3=T.TextDim,TextSize=11,
+            Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=3},sec._body)
+        local t={}; function t:Set(v) lbl.Text=v end; return t
+    end
+
+    -- ── COLORPICKER ──────────────────────────────────────────────────────────
+    function sec:Colorpicker(o, _parentRow)
+        o=o or {}
+        local nm=o.name or "Color"; local ptr=o.pointer or nm
+        local def=o.default or Color3.fromRGB(255,255,255)
+        local cb=o.callback or function()end
+        lib.flags[ptr]=def
+
+        local r=_parentRow or baseRow(30)
+        if not _parentRow then rowHover(r) end
+
+        local swatch=mk("Frame",{Size=UDim2.new(0,18,0,12),
+            Position=UDim2.new(1,-(_parentRow and 8 or 44),.5,-6),
+            BackgroundColor3=def,BorderSizePixel=0,ZIndex=5},r)
+        corner(3,swatch); stroke(T.Border,1,swatch)
+        if not _parentRow then
+            mk("TextLabel",{Size=UDim2.new(1,-50,1,0),Position=UDim2.new(0,10,0,0),
+                BackgroundTransparency=1,Text=nm,TextColor3=T.TextSub,
+                TextSize=12,Font=Enum.Font.GothamMedium,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=4},r)
+        end
+
+        local popup=mk("Frame",{Size=UDim2.new(0,180,0,0),Position=UDim2.new(1,-182,1,4),
+            BackgroundColor3=T.BG3,BorderSizePixel=0,ClipsDescendants=false,ZIndex=20,Visible=false},r)
+        corner(8,popup); stroke(T.BorderLt,1,popup); shadow(popup,16,.7)
+
+        local popOpen=false
+        local function closePopup()
+            popOpen=false
+            tw(popup,{Size=UDim2.new(0,180,0,0)},.18,Enum.EasingStyle.Quart,Enum.EasingDirection.In,function()
+                popup.Visible=false
+            end)
+        end
+        local function openPopup()
+            popOpen=true; popup.Visible=true
+            tw(popup,{Size=UDim2.new(0,180,0,168)},.25,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
+        end
+
+        local sv=mk("ImageLabel",{Size=UDim2.new(1,-8,0,110),Position=UDim2.new(0,4,0,4),
+            BackgroundColor3=def,BorderSizePixel=0,Image="rbxassetid://8630797271",ZIndex=21},popup)
+        corner(4,sv); stroke(T.Border,1,sv)
+        local svPicker=mk("Frame",{Size=UDim2.new(0,8,0,8),
+            BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=22},sv)
+        corner(4,svPicker)
+
+        local hueBar=mk("ImageLabel",{Size=UDim2.new(0,12,0,110),Position=UDim2.new(1,-16,0,4),
+            BackgroundColor3=Color3.fromRGB(255,0,0),BorderSizePixel=0,
+            Image="rbxassetid://8630799159",ScaleType=Enum.ScaleType.Crop,ZIndex=21},popup)
+        corner(3,hueBar); stroke(T.Border,1,hueBar)
+        local huePicker=mk("Frame",{Size=UDim2.new(1,0,0,2),
+            BackgroundColor3=Color3.fromRGB(255,255,255),BorderSizePixel=0,ZIndex=22},hueBar)
+
+        local hexBox=mk("TextBox",{Size=UDim2.new(1,-8,0,20),Position=UDim2.new(0,4,0,118),
+            BackgroundColor3=T.BG2,BackgroundTransparency=.3,
+            Text=string.format("#%02X%02X%02X",def.R*255,def.G*255,def.B*255),
+            TextColor3=T.TextPri,TextSize=11,Font=Enum.Font.GothamMedium,
+            PlaceholderText="#RRGGBB",ZIndex=21,BorderSizePixel=0},popup)
+        corner(4,hexBox); stroke(T.Border,1,hexBox); pad(6,0,0,0,hexBox)
+
+        local rbRow=mk("TextButton",{Size=UDim2.new(1,-8,0,20),Position=UDim2.new(0,4,0,142),
+            BackgroundColor3=T.BG2,BackgroundTransparency=.3,Text="🌈  Rainbow",
+            TextColor3=T.TextSub,TextSize=11,Font=Enum.Font.GothamMedium,
+            AutoButtonColor=false,ZIndex=21},popup)
+        corner(4,rbRow)
+
+        local hue,sat,val2=def:ToHSV(); local rainbow=false; local rbConn
+        local function applyColor(c)
+            lib.flags[ptr]=c; swatch.BackgroundColor3=c
+            sv.BackgroundColor3=Color3.fromHSV(hue,1,1)
+            hexBox.Text=string.format("#%02X%02X%02X",math.floor(c.R*255+.5),math.floor(c.G*255+.5),math.floor(c.B*255+.5))
+            cb(c)
+        end
+        local function rebuild()
+            local c=Color3.fromHSV(hue,sat,val2)
+            svPicker.Position=UDim2.new(sat,-4,1-val2,-4)
+            huePicker.Position=UDim2.new(0,0,1-hue,-1)
+            applyColor(c)
+        end
+        rebuild()
+
+        local svDrag=false
+        sv.InputBegan:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.MouseButton1 then svDrag=true
+                sat=math.clamp((i.Position.X-sv.AbsolutePosition.X)/sv.AbsoluteSize.X,0,1)
+                val2=1-math.clamp((i.Position.Y-sv.AbsolutePosition.Y)/sv.AbsoluteSize.Y,0,1); rebuild()
+            end
+        end)
+        sv.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then svDrag=false end end)
+        UIS.InputChanged:Connect(function(i)
+            if svDrag and i.UserInputType==Enum.UserInputType.MouseMovement then
+                sat=math.clamp((i.Position.X-sv.AbsolutePosition.X)/sv.AbsoluteSize.X,0,1)
+                val2=1-math.clamp((i.Position.Y-sv.AbsolutePosition.Y)/sv.AbsoluteSize.Y,0,1); rebuild()
+            end
+        end)
+        local hueDrag=false
+        hueBar.InputBegan:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.MouseButton1 then hueDrag=true
+                hue=1-math.clamp((i.Position.Y-hueBar.AbsolutePosition.Y)/hueBar.AbsoluteSize.Y,0,1); rebuild()
+            end
+        end)
+        hueBar.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then hueDrag=false end end)
+        UIS.InputChanged:Connect(function(i)
+            if hueDrag and i.UserInputType==Enum.UserInputType.MouseMovement then
+                hue=1-math.clamp((i.Position.Y-hueBar.AbsolutePosition.Y)/hueBar.AbsoluteSize.Y,0,1); rebuild()
+            end
+        end)
+        hexBox.FocusLost:Connect(function()
+            local hex=hexBox.Text:gsub("#","")
+            if #hex==6 then
+                local r2,g2,b2=tonumber(hex:sub(1,2),16),tonumber(hex:sub(3,4),16),tonumber(hex:sub(5,6),16)
+                if r2 and g2 and b2 then hue,sat,val2=Color3.fromRGB(r2,g2,b2):ToHSV(); rebuild() end
+            end
+        end)
+        rbRow.MouseButton1Click:Connect(function()
+            rainbow=not rainbow; tw(rbRow,{TextColor3=rainbow and lib.accent or T.TextSub},.15)
+            if rainbow then
+                rbConn=RS.Heartbeat:Connect(function()
+                    if not rainbow then rbConn:Disconnect(); return end
+                    hue=(hue+.002)%1; rebuild()
+                end)
+            elseif rbConn then rbConn:Disconnect() end
+        end)
+        local swBtn=mk("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=6},swatch)
+        swBtn.MouseButton1Click:Connect(function() if popOpen then closePopup() else openPopup() end end)
+
+        local s={}
+        function s:Set(c) hue,sat,val2=c:ToHSV(); rebuild() end
+        lib._setters[ptr]=function(v) s:Set(v) end; return s
+    end
 end
 
 -- ── WATERMARK ────────────────────────────────────────────────────────────────
 function VantaUI:Watermark(opts)
     opts=opts or {}
     local parts=opts.parts or {self._title..self._sub}
-
     local wGui=mk("ScreenGui",{Name="VantaWM",ResetOnSpawn=false,
         ZIndexBehavior=Enum.ZIndexBehavior.Sibling,IgnoreGuiInset=true})
     pcall(function() wGui.Parent=CG end)
     if not wGui.Parent then wGui.Parent=PLS.LocalPlayer:WaitForChild("PlayerGui") end
-
-    local wFrame=mk("Frame",{
-        Size=UDim2.new(0,200,0,26),Position=UDim2.new(0,10,0,10),
-        BackgroundColor3=T.BG3,BackgroundTransparency=.15,BorderSizePixel=0,
-    },wGui)
-    corner(6,wFrame); stroke(T.Border,1,wFrame); shadow(wFrame,12,.7)
-
-    -- accent left bar
+    local wf=mk("Frame",{Size=UDim2.new(0,200,0,26),Position=UDim2.new(0,10,0,10),
+        BackgroundColor3=T.BG3,BackgroundTransparency=.15,BorderSizePixel=0},wGui)
+    corner(6,wf); stroke(T.Border,1,wf); shadow(wf,12,.7)
     local ab=mk("Frame",{Size=UDim2.new(0,3,1,-8),Position=UDim2.new(0,0,0,4),
-        BackgroundColor3=self.accent,BorderSizePixel=0},wFrame)
-    corner(2,ab)
-
-    local wLbl=mk("TextLabel",{
-        Size=UDim2.new(1,-10,1,0),Position=UDim2.new(0,8,0,0),
+        BackgroundColor3=self.accent,BorderSizePixel=0},wf); corner(2,ab)
+    local wl=mk("TextLabel",{Size=UDim2.new(1,-10,1,0),Position=UDim2.new(0,8,0,0),
         BackgroundTransparency=1,RichText=true,
         Text=table.concat(parts,' <font color="rgb(50,50,70)">|</font> '),
         TextColor3=T.TextPri,TextSize=12,Font=Enum.Font.GothamMedium,
-        TextXAlignment=Enum.TextXAlignment.Left,
-    },wFrame)
-
-    -- auto-resize
+        TextXAlignment=Enum.TextXAlignment.Left},wf)
     local function resize()
-        local w=txsz(wLbl.Text:gsub('<[^>]+>',''),12,Enum.Font.GothamMedium).X+20
-        tw(wFrame,{Size=UDim2.new(0,w,0,26)},.15)
+        local w=txsz(wl.Text:gsub('<[^>]+>',''),12,Enum.Font.GothamMedium).X+20
+        tw(wf,{Size=UDim2.new(0,w,0,26)},.15)
     end
     resize()
-
     local wt={}
     function wt:Update(p)
-        wLbl.Text=table.concat(p,' <font color="rgb(50,50,70)">|</font> ')
-        resize()
+        wl.Text=table.concat(p,' <font color="rgb(50,50,70)">|</font> '); resize()
     end
-    function wt:Toggle()
-        wFrame.Visible=not wFrame.Visible
-    end
+    function wt:Toggle() wf.Visible=not wf.Visible end
     return wt
 end
 
--- ── CONFIG SYSTEM ────────────────────────────────────────────────────────────
+-- ── CONFIG ───────────────────────────────────────────────────────────────────
 function VantaUI:SaveConfig(name)
     local t={}
     for k,v in pairs(self.flags) do
@@ -1079,30 +799,23 @@ function VantaUI:SaveConfig(name)
         end
     end
     local ok,hs=pcall(function() return game:GetService("HttpService"):JSONEncode(t) end)
-    if ok then
-        pcall(function()
-            if not isfolder("vanta") then makefolder("vanta") end
-            writefile("vanta/"..name..".json",hs)
-        end)
-    end
+    if ok then pcall(function()
+        if not isfolder("vanta") then makefolder("vanta") end
+        writefile("vanta/"..name..".json",hs)
+    end) end
 end
 
 function VantaUI:LoadConfig(name)
     local ok,data=pcall(function()
-        local raw=readfile("vanta/"..name..".json")
-        return game:GetService("HttpService"):JSONDecode(raw)
+        return game:GetService("HttpService"):JSONDecode(readfile("vanta/"..name..".json"))
     end)
     if not ok or not data then return end
     for k,v in pairs(data) do
         local setter=self._setters[k]
         if setter then
-            if type(v)=="table" and #v==3 then
-                setter(Color3.fromRGB(v[1],v[2],v[3]))
-            elseif type(v)=="string" and v:find("Enum.") then
-                pcall(function()
-                    local parts=v:split(".")
-                    setter(Enum[parts[2]][parts[3]])
-                end)
+            if type(v)=="table" and #v==3 then setter(Color3.fromRGB(v[1],v[2],v[3]))
+            elseif type(v)=="string" and v:find("Enum%.") then
+                pcall(function() local p=v:split("."); setter(Enum[p[2]][p[3]]) end)
             else setter(v) end
         end
     end
@@ -1113,17 +826,13 @@ function VantaUI:ListConfigs()
     pcall(function()
         if isfolder("vanta") then
             for _,f in ipairs(listfiles("vanta")) do
-                table.insert(out,(f:gsub("vanta\\",""):gsub("vanta/",""):gsub("%.json","")))
+                table.insert(out,(f:gsub("vanta[/\\]",""):gsub("%.json","")))
             end
         end
     end)
     return out
 end
 
--- ── INITIALIZE ───────────────────────────────────────────────────────────────
-function VantaUI:Initialize()
-    -- called after all tabs/sections are built; nothing required but kept for API compat
-    return self
-end
+function VantaUI:Initialize() return self end
 
 return VantaUI
