@@ -1581,7 +1581,7 @@ RunService.Heartbeat:Connect(function()
 
             -- spam E for 1 second while staying on top
             local elapsed = 0
-            while elapsed < 1 do
+            while elapsed < 2 do
                 -- keep locked on top in case they move
                 if hrp and hrp.Parent then
                     myHRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
