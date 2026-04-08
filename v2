@@ -66,22 +66,8 @@ JumpSection:Keybind({ name="SJ Key",      pointer="superjumpkey", default=Enum.K
 JumpSection:Slider({  name="Power",       pointer="jumppower",    minimum=50, maximum=1000, default=260, callback=function()end })
 
 local AnimSection = MovementTab:Section({ name = "Animation Player", side = "right" })
-AnimSection:Dropdown({
-    name = "Emote",
-    pointer = "selectedemote",
-    options = {
-        "Dab","Wave","Dance","Laugh","Point","Cheer","Salute","Shrug",
-        "Tilt","Breakdance","Robot","Floss","Orange Justice","Griddy",
-        "Renegade","Woah","Shoot","Backpack Kid","Wiggle","Electro Shuffle",
-        "Gangnam Style","Whip Nae Nae","Running Man","Moonwalk","Worm",
-        "Sprinkler","Macarena","YMCA","Thriller","Disco Fever",
-    },
-    default = "Wave",
-    callback = function(v) Library.flags.selectedemote = v end
-})
+AnimSection:Box({ name="Emote ID", pointer="emoteid", placeholder="rbxassetid://...", type="string", callback=function(v) Library.flags.emoteid = v end })
 AnimSection:Keybind({ name="Play Emote Key", pointer="emotekey", default=Enum.KeyCode.H, callback=function()end })
--- padding to make section tall enough for full dropdown
-for i = 1, 22 do AnimSection:Label({ name = "" }) end
 
 local VisualsTab = Window:Page({ name = "Visuals" })
 local ESPSection = VisualsTab:Section({ name = "ESP", side = "left" })
@@ -1560,39 +1546,6 @@ end
 -- ============================================================================
 -- ANIMATION PLAYER
 -- ============================================================================
-local EmoteAnimIds = {
-    ["Wave"]             = "rbxassetid://507770239",
-    ["Dab"]              = "rbxassetid://3360686498",
-    ["Dance"]            = "rbxassetid://507771019",
-    ["Laugh"]            = "rbxassetid://507770818",
-    ["Point"]            = "rbxassetid://507770453",
-    ["Cheer"]            = "rbxassetid://507770677",
-    ["Salute"]           = "rbxassetid://3360692915",
-    ["Shrug"]            = "rbxassetid://3360689775",
-    ["Tilt"]             = "rbxassetid://3360693148",
-    ["Breakdance"]       = "rbxassetid://182435998",
-    ["Robot"]            = "rbxassetid://182436935",
-    ["Floss"]            = "rbxassetid://2106759570",
-    ["Orange Justice"]   = "rbxassetid://2767720887",
-    ["Griddy"]           = "rbxassetid://7715333682",
-    ["Renegade"]         = "rbxassetid://6899663224",
-    ["Woah"]             = "rbxassetid://6899663224",
-    ["Shoot"]            = "rbxassetid://6899663224",
-    ["Backpack Kid"]     = "rbxassetid://2106759570",
-    ["Wiggle"]           = "rbxassetid://507770239",
-    ["Electro Shuffle"]  = "rbxassetid://6899663224",
-    ["Gangnam Style"]    = "rbxassetid://182436935",
-    ["Whip Nae Nae"]     = "rbxassetid://2767720887",
-    ["Running Man"]      = "rbxassetid://182435998",
-    ["Moonwalk"]         = "rbxassetid://182436935",
-    ["Worm"]             = "rbxassetid://182435998",
-    ["Sprinkler"]        = "rbxassetid://507770239",
-    ["Macarena"]         = "rbxassetid://2106759570",
-    ["YMCA"]             = "rbxassetid://507771019",
-    ["Thriller"]         = "rbxassetid://182436935",
-    ["Disco Fever"]      = "rbxassetid://2106759570",
-}
-
 local ActiveEmoteTrack = nil
 
 local function PlaySelectedEmote()
@@ -1603,31 +1556,28 @@ local function PlaySelectedEmote()
     local animator = hum:FindFirstChildOfClass("Animator")
     if not animator then return end
 
-    -- stop previous emote if playing
     if ActiveEmoteTrack then
         pcall(function() ActiveEmoteTrack:Stop(0.1) end)
         ActiveEmoteTrack = nil
     end
 
-    local emoteName = flags.selectedemote or "Wave"
-    local animId = EmoteAnimIds[emoteName]
-    if not animId then return end
+    local animId = flags.emoteid or ""
+    if animId == "" then return end
+    -- allow bare numbers too
+    if not animId:find("rbxassetid://") then animId = "rbxassetid://" .. animId end
 
     local anim = Instance.new("Animation")
     anim.AnimationId = animId
 
     local track = animator:LoadAnimation(anim)
-    track.Priority = Enum.AnimationPriority.Action4  -- highest priority, overrides everything
+    track.Priority = Enum.AnimationPriority.Action4
     track.Looped = true
     track:Play(0.1)
     ActiveEmoteTrack = track
     anim:Destroy()
 
-    -- stop when keybind pressed again (toggle off)
     track.Stopped:Connect(function()
-        if ActiveEmoteTrack == track then
-            ActiveEmoteTrack = nil
-        end
+        if ActiveEmoteTrack == track then ActiveEmoteTrack = nil end
     end)
 end
 
