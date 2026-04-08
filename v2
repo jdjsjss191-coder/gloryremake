@@ -1546,12 +1546,9 @@ end
 -- AUTO STOMP
 -- ============================================================================
 local StompInProgress = false
+local StompedPlayers = {}  -- track who we already stomped
 
 local function SimulateKeyPress(keyCode)
-    local vInput = Instance.new("InputObject")
-    vInput.KeyCode = keyCode
-    vInput.UserInputType = Enum.UserInputType.Keyboard
-    vInput.UserInputState = Enum.UserInputState.Begin
     game:GetService("VirtualInputManager"):SendKeyEvent(true, keyCode, false, game)
     task.wait(0.07)
     game:GetService("VirtualInputManager"):SendKeyEvent(false, keyCode, false, game)
@@ -1569,27 +1566,46 @@ RunService.Heartbeat:Connect(function()
         local hum = p.Character:FindFirstChildOfClass("Humanoid")
         local hrp = p.Character:FindFirstChild("HumanoidRootPart")
         if not hum or not hrp then continue end
-        -- target is at 0 hp (knocked/dead)
-        if hum.Health > 1 then continue end
+        -- trigger on anyone at 11 hp or under
+        if hum.Health > 11 then continue end
+        -- skip if already stomped this down-state
+        if StompedPlayers[p.UserId] then continue end
 
+        StompedPlayers[p.UserId] = true
         StompInProgress = true
         local prevCF = myHRP.CFrame
 
-        -- tp on top of them
-        myHRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
-        task.wait(0.1)
+        task.spawn(function()
+            -- tp on top of them
+            myHRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
 
-        -- press E twice
-        SimulateKeyPress(Enum.KeyCode.E)
-        task.wait(0.15)
-        SimulateKeyPress(Enum.KeyCode.E)
-        task.wait(0.15)
+            -- spam E for 1 second while staying on top
+            local elapsed = 0
+            while elapsed < 1 do
+                -- keep locked on top in case they move
+                if hrp and hrp.Parent then
+                    myHRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
+                end
+                SimulateKeyPress(Enum.KeyCode.E)
+                elapsed = elapsed + 0.12
+            end
 
-        -- tp back
-        myHRP.CFrame = prevCF
-        task.wait(0.5) -- cooldown before next stomp
-        StompInProgress = false
+            -- tp back
+            myHRP.CFrame = prevCF
+            StompInProgress = false
+        end)
         break
+    end
+end)
+
+-- clear stomp memory when a player's health goes back up (respawn)
+RunService.Heartbeat:Connect(function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p == LocalPlayer or not p.Character then continue end
+        local hum = p.Character:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Health > 11 then
+            StompedPlayers[p.UserId] = nil
+        end
     end
 end)
 
