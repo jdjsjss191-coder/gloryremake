@@ -30,7 +30,7 @@ end
 -- UI ENGINE
 -- ============================================================================
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/jdjsjss191-coder/Novapriv/refs/heads/main/vanta"))()
-local Window = Library:New({ name = "Vanta", sizeX = 580, sizeY = 700 })
+local Window = Library:New({ name = "Vanta", sizeX = 580, sizeY = 380 })
 
 -- TAB: MAIN
 local MainTab = Window:Page({ name = "Main" })
@@ -65,7 +65,7 @@ JumpSection:Toggle({  name="Super Jump",  pointer="superjump",    default=false,
 JumpSection:Keybind({ name="SJ Key",      pointer="superjumpkey", default=Enum.KeyCode.X, callback=function()end })
 JumpSection:Slider({  name="Power",       pointer="jumppower",    minimum=50, maximum=1000, default=260, callback=function()end })
 
-local AnimSection = MovementTab:Section({ name = "Animation Player", side = "right" })
+local AnimSection = MovementTab:Section({ name = "Animation Player", side = "left" })
 AnimSection:Box({ name="Emote ID", pointer="emoteid", placeholder="rbxassetid://...", type="string", callback=function(v) Library.flags.emoteid = v end })
 AnimSection:Keybind({ name="Play Emote Key", pointer="emotekey", default=Enum.KeyCode.H, callback=function()end })
 
