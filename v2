@@ -30,7 +30,7 @@ end
 -- UI ENGINE
 -- ============================================================================
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/jdjsjss191-coder/Novapriv/refs/heads/main/vanta"))()
-local Window = Library:New({ name = "Vanta", sizeX = 580, sizeY = 460 })
+local Window = Library:New({ name = "Vanta", sizeX = 580, sizeY = 560 })
 
 -- TAB: MAIN
 local MainTab = Window:Page({ name = "Main" })
@@ -54,8 +54,8 @@ CamSection:Slider({  name="Smoothness",     pointer="camsmooth",      minimum=0,
 CamSection:Toggle({  name="FOV Circle",     pointer="camlockfov",     default=false, callback=function()end })
 CamSection:Slider({  name="FOV Size",       pointer="camlockfovsize", minimum=10, maximum=500, default=55, callback=function()end })
 
-local MovementTab = Window:Page({ name = "Main" })
-local SpeedSection = MovementTab:Section({ name = "Main", side = "left" })
+local MovementTab = Window:Page({ name = "Movement" })
+local SpeedSection = MovementTab:Section({ name = "Speed", side = "left" })
 SpeedSection:Toggle({  name="Speed",      pointer="speed",     default=false, callback=function()end })
 SpeedSection:Keybind({ name="Speed Key",  pointer="speedkey",  default=Enum.KeyCode.V, callback=function()end })
 SpeedSection:Slider({  name="Walk Speed", pointer="speedmult", minimum=1, maximum=1000, default=40, callback=function()end })
@@ -65,7 +65,7 @@ JumpSection:Toggle({  name="Super Jump",  pointer="superjump",    default=false,
 JumpSection:Keybind({ name="SJ Key",      pointer="superjumpkey", default=Enum.KeyCode.X, callback=function()end })
 JumpSection:Slider({  name="Power",       pointer="jumppower",    minimum=50, maximum=1000, default=260, callback=function()end })
 
-local AnimSection = MovementTab:Section({ name = "Animation Player", side = "left" })
+local AnimSection = MovementTab:Section({ name = "Animation Player", side = "right" })
 AnimSection:Dropdown({
     name = "Emote",
     pointer = "selectedemote",
