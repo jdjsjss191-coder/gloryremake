@@ -126,9 +126,8 @@ WeaponMods:Toggle({ name="Spread Mods",  pointer="spread",      default=false, c
 WeaponMods:Slider({ name="Spread Amount",pointer="spreadamt",   minimum=0, maximum=100, default=0, callback=function()end })
 WeaponMods:Toggle({ name="Infinite Range",pointer="infrange",   default=false, callback=function()end })
 WeaponMods:Keybind({ name="IR Key",      pointer="infrangekey", default=Enum.KeyCode.N, callback=function()end })
-local BulletTPSection = WeaponTab:Section({ name = "Bullet TP", side = "right" })
-BulletTPSection:Toggle({ name="Bullet TP", pointer="bullettp", default=false, callback=function()end })
-local GunFOV = WeaponTab:Section({ name = "Gun Based FOV", side = "left" })
+local GunFOV = WeaponTab:Section({ name = "Gun Based FOV", side = "right" })
+GunFOV:Toggle({ name="Gun Based FOV",    pointer="gunfov", default=false, callback=function()end })
 GunFOV:Slider({ name="Double Barrel",   pointer="fovdb",  minimum=10, maximum=500, default=80,  callback=function()end })
 GunFOV:Slider({ name="Tactical SG",     pointer="fovts",  minimum=10, maximum=500, default=100, callback=function()end })
 GunFOV:Slider({ name="Revolver",        pointer="fovrev", minimum=10, maximum=500, default=90,  callback=function()end })
@@ -1748,62 +1747,6 @@ RunService.RenderStepped:Connect(function()
         local v=tool:FindFirstChild(prop); if v and (v:IsA("NumberValue") or v:IsA("IntValue")) then v.Value=900000000 end
         local gc=tool:FindFirstChild("Configuration") or tool:FindFirstChild("GunConfig")
         if gc then local r=gc:FindFirstChild(prop); if r then r.Value=900000000 end end
-    end
-end)
-
--- ============================================================================
--- BULLET TP
--- ============================================================================
-local BulletTPActive = false
-local BulletTPCooldown = {}
-
--- force all range values to max so shots register from any distance
-local function ForceInfRange(tool)
-    if not tool then return end
-    for _, prop in ipairs({"Range","MaxRange","FireRange","Distance","MaxDistance"}) do
-        local v = tool:FindFirstChild(prop)
-        if v and (v:IsA("NumberValue") or v:IsA("IntValue")) then v.Value = 900000000 end
-        local gc = tool:FindFirstChild("Configuration") or tool:FindFirstChild("GunConfig")
-        if gc then local r = gc:FindFirstChild(prop); if r then r.Value = 900000000 end end
-    end
-end
-
-UserInputService.InputBegan:Connect(function(i, gp)
-    if not gp and i.UserInputType == Enum.UserInputType.MouseButton1 and flags.bullettp then
-        local myChar = LocalPlayer.Character
-        if not myChar then return end
-        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        if not myHRP then return end
-
-        -- find closest visible target
-        local target = CurrentTarget or SelectedTarget or CamLockTarget or FindClosestToMouse(true)
-        if not target or not target.Character then return end
-        local tHRP = target.Character:FindFirstChild("HumanoidRootPart")
-        if not tHRP then return end
-
-        local uid = target.UserId
-        if BulletTPCooldown[uid] then return end
-        BulletTPCooldown[uid] = true
-
-        local prevCF = myHRP.CFrame
-        local tool = myChar:FindFirstChildOfClass("Tool")
-
-        -- force inf range before shot
-        ForceInfRange(tool)
-
-        -- tp right on top of target
-        myHRP.CFrame = tHRP.CFrame + Vector3.new(0, 2, 0)
-
-        task.spawn(function()
-            task.wait(0.05)
-            -- fire the tool while standing on them
-            if tool then tool:Activate() end
-            task.wait(0.1)
-            -- tp back
-            myHRP.CFrame = prevCF
-            task.wait(0.4)
-            BulletTPCooldown[uid] = nil
-        end)
     end
 end)
 
