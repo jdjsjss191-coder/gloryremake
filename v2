@@ -30,7 +30,7 @@ end
 -- UI ENGINE
 -- ============================================================================
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/jdjsjss191-coder/Novapriv/refs/heads/main/vanta"))()
-local Window = Library:New({ name = "Vanta", sizeX = 580, sizeY = 560 })
+local Window = Library:New({ name = "Vanta", sizeX = 580, sizeY = 700 })
 
 -- TAB: MAIN
 local MainTab = Window:Page({ name = "Main" })
