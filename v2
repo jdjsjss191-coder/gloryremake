@@ -1548,35 +1548,25 @@ end
 -- ============================================================================
 local ActiveEmoteTrack = nil
 
-local function ResolveAnimId(input)
-    -- strip to just the number
-    local id = tostring(input):match("%d+")
-    if not id then return nil end
-
-    -- try to get the inner animation id from the catalog item
-    local resolvedId = id
-    pcall(function()
-        local data = game:GetService("HttpService"):JSONDecode(
-            game:HttpGet("https://assetdelivery.roblox.com/v1/asset/?id=" .. id)
-        )
-        -- if it has an inner animation reference, use that
-        if data and data.animationId then
-            resolvedId = tostring(data.animationId):match("%d+") or id
-        end
+local function GetAnimIdFromBundle(bundleId)
+    -- get bundle details to find the animation asset inside it
+    local ok, res = pcall(function()
+        return game:HttpGet("https://catalog.roblox.com/v1/bundles/" .. bundleId .. "/details")
     end)
+    if not ok or not res then return nil end
 
-    -- fallback: use MarketplaceService to get the asset type and inner id
-    if resolvedId == id then
-        pcall(function()
-            local info = game:GetService("MarketplaceService"):GetProductInfo(tonumber(id))
-            -- AssetTypeId 24 = Animation
-            if info and info.AssetTypeId == 24 then
-                resolvedId = id  -- it's already an animation
-            end
-        end)
+    local ok2, data = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(res)
+    end)
+    if not ok2 or not data or not data.items then return nil end
+
+    for _, item in ipairs(data.items) do
+        -- type 2 = Animation asset
+        if item.type == "Asset" and item.assetType and item.assetType.id == 24 then
+            return tostring(item.id)
+        end
     end
-
-    return "rbxassetid://" .. resolvedId
+    return nil
 end
 
 local function PlaySelectedEmote()
@@ -1594,32 +1584,17 @@ local function PlaySelectedEmote()
 
     local raw = flags.emoteid or ""
     if raw == "" then return end
+    local num = raw:match("%d+")
+    if not num then return end
 
-    -- resolve catalog bundle -> actual animation id
-    local animId = nil
-    pcall(function()
-        -- fetch the asset page to find the inner animation
-        local url = "https://assetdelivery.roblox.com/v2/assetId/" .. (raw:match("%d+") or raw)
-        local res = game:HttpGet(url)
-        local data = game:GetService("HttpService"):JSONDecode(res)
-        if data and data.locations and data.locations[1] then
-            -- get the actual file and parse the animation id out
-            local loc = data.locations[1].location
-            local content = game:HttpGet(loc)
-            local innerid = content:match('"animationId"%s*:%s*(%d+)')
-                or content:match("AnimationId%s*=%s*(%d+)")
-            if innerid then animId = "rbxassetid://" .. innerid end
-        end
-    end)
+    -- try to resolve bundle -> animation id first
+    local animId = GetAnimIdFromBundle(num)
 
-    -- if resolution failed, just try the raw id directly
-    if not animId then
-        local num = raw:match("%d+") or raw
-        animId = "rbxassetid://" .. num
-    end
+    -- if that failed, assume it's already a direct animation id
+    if not animId then animId = num end
 
     local anim = Instance.new("Animation")
-    anim.AnimationId = animId
+    anim.AnimationId = "rbxassetid://" .. animId
     anim.Parent = LocalPlayer
 
     local ok, track = pcall(function()
