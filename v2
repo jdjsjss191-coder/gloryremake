@@ -80,6 +80,8 @@ AnimSection:Dropdown({
     callback = function(v) Library.flags.selectedemote = v end
 })
 AnimSection:Keybind({ name="Play Emote Key", pointer="emotekey", default=Enum.KeyCode.H, callback=function()end })
+-- padding to make section tall enough for full dropdown
+for i = 1, 22 do AnimSection:Label({ name = "" }) end
 
 local VisualsTab = Window:Page({ name = "Visuals" })
 local ESPSection = VisualsTab:Section({ name = "ESP", side = "left" })
