@@ -65,9 +65,11 @@ JumpSection:Toggle({  name="Super Jump",  pointer="superjump",    default=false,
 JumpSection:Keybind({ name="SJ Key",      pointer="superjumpkey", default=Enum.KeyCode.X, callback=function()end })
 JumpSection:Slider({  name="Power",       pointer="jumppower",    minimum=50, maximum=1000, default=260, callback=function()end })
 
-local AnimSection = MovementTab:Section({ name = "Animation Player", side = "left" })
-AnimSection:Box({ name="Emote ID", pointer="emoteid", placeholder="rbxassetid://...", type="string", callback=function(v) Library.flags.emoteid = v end })
-AnimSection:Keybind({ name="Play Emote Key", pointer="emotekey", default=Enum.KeyCode.H, callback=function()end })
+local AnimSection = MovementTab:Section({ name = "HvH", side = "left" })
+local flingToggle = AnimSection:Toggle({ name="Fling", pointer="fling", default=false, callback=function()end })
+AnimSection:Keybind({ name="Fling Key", pointer="flingkey", default=Enum.KeyCode.G, callback=function()end })
+local tracerHvhToggle = AnimSection:Toggle({ name="Target Tracer", pointer="hvhtracer", default=false, callback=function()end })
+tracerHvhToggle:Colorpicker({ pointer="hvhtracercolor", default=Color3.fromRGB(255,50,50), callback=function(v) Library.flags.hvhtracercolor=v end })
 
 local VisualsTab = Window:Page({ name = "Visuals" })
 local ESPSection = VisualsTab:Section({ name = "ESP", side = "left" })
@@ -1544,66 +1546,67 @@ local function UpdateTarget()
 end
 
 -- ============================================================================
--- ANIMATION PLAYER
+-- HVH / FLING
 -- ============================================================================
-local ActiveEmoteTrack = nil
+local FlingActive = false
 
-local function PlaySelectedEmote()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    local animator = hum:FindFirstChildOfClass("Animator")
-    if not animator then animator = Instance.new("Animator", hum) end
+-- Target tracer drawing for HvH
+local HvhTracerLine = Drawing.new("Line")
+HvhTracerLine.Visible = false; HvhTracerLine.Thickness = 1; HvhTracerLine.Transparency = 1; HvhTracerLine.ZIndex = 1003
+local HvhTracerOutline = Drawing.new("Line")
+HvhTracerOutline.Visible = false; HvhTracerOutline.Thickness = 3; HvhTracerOutline.Color = Color3.fromRGB(0,0,0); HvhTracerOutline.Transparency = 1; HvhTracerOutline.ZIndex = 1002
 
-    if ActiveEmoteTrack then
-        pcall(function() ActiveEmoteTrack:Stop(0.1) end)
-        ActiveEmoteTrack = nil
+RunService.RenderStepped:Connect(function()
+    local tgt = CurrentTarget or SelectedTarget or CamLockTarget
+    if not flags.hvhtracer or not tgt or not tgt.Character or PlayerDead(tgt) or PlayerKnocked(tgt) then
+        HvhTracerLine.Visible = false; HvhTracerOutline.Visible = false; return
     end
+    local hrp = tgt.Character:FindFirstChild("HumanoidRootPart"); if not hrp then HvhTracerLine.Visible = false; HvhTracerOutline.Visible = false; return end
+    local sp, on = Camera:WorldToViewportPoint(hrp.Position); if not on or sp.Z <= 0 then HvhTracerLine.Visible = false; HvhTracerOutline.Visible = false; return end
+    local vp = Camera.ViewportSize
+    local from = Vector2_new(vp.X/2, vp.Y/2)
+    local to   = Vector2_new(sp.X, sp.Y)
+    local col  = flags.hvhtracercolor or Color3.fromRGB(255,50,50)
+    HvhTracerOutline.From=from; HvhTracerOutline.To=to; HvhTracerOutline.Visible=true
+    HvhTracerLine.From=from; HvhTracerLine.To=to; HvhTracerLine.Color=col; HvhTracerLine.Visible=true
+end)
 
-    local raw = flags.emoteid or ""
-    if raw == "" then return end
-    local num = tonumber(raw:match("%d+"))
-    if not num then return end
+local function DoFling()
+    if not flags.fling then return end
+    local tgt = CurrentTarget or SelectedTarget or CamLockTarget
+    if not tgt or not tgt.Character then return end
+    local tgtHrp = tgt.Character:FindFirstChild("HumanoidRootPart"); if not tgtHrp then return end
+    local char = LocalPlayer.Character; if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart"); if not hrp then return end
+    local hum = char:FindFirstChildOfClass("Humanoid"); if not hum then return end
 
-    -- use InsertService to load the catalog emote asset and extract the animation id
-    local animId = nil
-    pcall(function()
-        local model = game:GetService("InsertService"):LoadAsset(num)
-        -- walk descendants to find an Animation object
-        for _, v in ipairs(model:GetDescendants()) do
-            if v:IsA("Animation") and v.AnimationId ~= "" then
-                animId = v.AnimationId
-                break
-            end
-        end
-        model:Destroy()
-    end)
+    -- save original position
+    local origCF = hrp.CFrame
 
-    -- fallback: treat the id as a direct animation id
-    if not animId then
-        animId = "rbxassetid://" .. num
-    end
+    -- tp ourselves on top of target
+    hrp.CFrame = tgtHrp.CFrame * CFrame.new(0, 0.5, 0)
+    task.wait()
 
-    local anim = Instance.new("Animation")
-    anim.AnimationId = animId
-    anim.Parent = LocalPlayer
+    -- slam a massive velocity into the target via a BodyVelocity on their HRP
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3_new(math.huge, math.huge, math.huge)
+    bv.Velocity  = Vector3_new(
+        math.random(-1,1) * math.random(800,1200),
+        math.random(600,900),
+        math.random(-1,1) * math.random(800,1200)
+    )
+    bv.Parent = tgtHrp
+    game:GetService("Debris"):AddItem(bv, 0.12)
 
-    local ok, track = pcall(function()
-        return animator:LoadAnimation(anim)
-    end)
-    anim:Destroy()
+    -- also push with a BodyForce for extra chaos
+    local bf = Instance.new("BodyForce")
+    bf.Force = bv.Velocity * 200
+    bf.Parent = tgtHrp
+    game:GetService("Debris"):AddItem(bf, 0.1)
 
-    if not ok or not track then return end
-
-    track.Priority = Enum.AnimationPriority.Action4
-    track.Looped = true
-    track:Play(0.1)
-    ActiveEmoteTrack = track
-
-    track.Stopped:Connect(function()
-        if ActiveEmoteTrack == track then ActiveEmoteTrack = nil end
-    end)
+    task.wait(0.15)
+    -- tp back
+    hrp.CFrame = origCF
 end
 
 -- ============================================================================
@@ -1627,15 +1630,8 @@ UserInputService.InputBegan:Connect(function(input,processed)
     if flags.superjump and KeyMatches(input,"superjumpkey") then SuperJumpActive=not SuperJumpActive end
     -- Infinite Range: toggle enables it, keybind activates/deactivates
     if flags.infrange and KeyMatches(input,"infrangekey") then InfRangeActive=not InfRangeActive end
-    -- Animation Player: play selected emote
-    if KeyMatches(input,"emotekey") then
-        if ActiveEmoteTrack then
-            pcall(function() ActiveEmoteTrack:Stop(0.1) end)
-            ActiveEmoteTrack = nil
-        else
-            PlaySelectedEmote()
-        end
-    end
+    -- Fling
+    if flags.fling and KeyMatches(input,"flingkey") then task.spawn(DoFling) end
 end)
 
 -- ============================================================================
