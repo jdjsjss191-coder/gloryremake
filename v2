@@ -1578,34 +1578,28 @@ local function DoFling()
     local tgtHrp = tgt.Character:FindFirstChild("HumanoidRootPart"); if not tgtHrp then return end
     local char = LocalPlayer.Character; if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart"); if not hrp then return end
-    local hum = char:FindFirstChildOfClass("Humanoid"); if not hum then return end
 
-    -- save original position
     local origCF = hrp.CFrame
-
-    -- tp ourselves on top of target
     hrp.CFrame = tgtHrp.CFrame * CFrame.new(0, 0.5, 0)
     task.wait()
 
-    -- slam a massive velocity into the target via a BodyVelocity on their HRP
+    local dirs = {-1, 1}
+    local dx = dirs[math.random(1,2)] * math.random(800,1200)
+    local dz = dirs[math.random(1,2)] * math.random(800,1200)
+    local dy = math.random(600,900)
+
     local bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3_new(math.huge, math.huge, math.huge)
-    bv.Velocity  = Vector3_new(
-        math.random(-1,1) * math.random(800,1200),
-        math.random(600,900),
-        math.random(-1,1) * math.random(800,1200)
-    )
+    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bv.Velocity  = Vector3.new(dx, dy, dz)
     bv.Parent = tgtHrp
     game:GetService("Debris"):AddItem(bv, 0.12)
 
-    -- also push with a BodyForce for extra chaos
     local bf = Instance.new("BodyForce")
-    bf.Force = bv.Velocity * 200
+    bf.Force = Vector3.new(dx * 200, dy * 200, dz * 200)
     bf.Parent = tgtHrp
     game:GetService("Debris"):AddItem(bf, 0.1)
 
     task.wait(0.15)
-    -- tp back
     hrp.CFrame = origCF
 end
 
