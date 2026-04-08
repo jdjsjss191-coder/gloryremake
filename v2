@@ -54,8 +54,8 @@ CamSection:Slider({  name="Smoothness",     pointer="camsmooth",      minimum=0,
 CamSection:Toggle({  name="FOV Circle",     pointer="camlockfov",     default=false, callback=function()end })
 CamSection:Slider({  name="FOV Size",       pointer="camlockfovsize", minimum=10, maximum=500, default=55, callback=function()end })
 
-local MovementTab = Window:Page({ name = "Movement" })
-local SpeedSection = MovementTab:Section({ name = "Speed", side = "left" })
+local MovementTab = Window:Page({ name = "Main" })
+local SpeedSection = MovementTab:Section({ name = "Main", side = "left" })
 SpeedSection:Toggle({  name="Speed",      pointer="speed",     default=false, callback=function()end })
 SpeedSection:Keybind({ name="Speed Key",  pointer="speedkey",  default=Enum.KeyCode.V, callback=function()end })
 SpeedSection:Slider({  name="Walk Speed", pointer="speedmult", minimum=1, maximum=1000, default=40, callback=function()end })
@@ -64,6 +64,22 @@ local JumpSection = MovementTab:Section({ name = "Super Jump", side = "right" })
 JumpSection:Toggle({  name="Super Jump",  pointer="superjump",    default=false, callback=function()end })
 JumpSection:Keybind({ name="SJ Key",      pointer="superjumpkey", default=Enum.KeyCode.X, callback=function()end })
 JumpSection:Slider({  name="Power",       pointer="jumppower",    minimum=50, maximum=1000, default=260, callback=function()end })
+
+local AnimSection = MovementTab:Section({ name = "Animation Player", side = "left" })
+AnimSection:Dropdown({
+    name = "Emote",
+    pointer = "selectedemote",
+    options = {
+        "Dab","Wave","Dance","Laugh","Point","Cheer","Salute","Shrug",
+        "Tilt","Breakdance","Robot","Floss","Orange Justice","Griddy",
+        "Renegade","Woah","Shoot","Backpack Kid","Wiggle","Electro Shuffle",
+        "Gangnam Style","Whip Nae Nae","Running Man","Moonwalk","Worm",
+        "Sprinkler","Macarena","YMCA","Thriller","Disco Fever",
+    },
+    default = "Wave",
+    callback = function(v) Library.flags.selectedemote = v end
+})
+AnimSection:Keybind({ name="Play Emote Key", pointer="emotekey", default=Enum.KeyCode.H, callback=function()end })
 
 local VisualsTab = Window:Page({ name = "Visuals" })
 local ESPSection = VisualsTab:Section({ name = "ESP", side = "left" })
@@ -1540,6 +1556,80 @@ local function UpdateTarget()
 end
 
 -- ============================================================================
+-- ANIMATION PLAYER
+-- ============================================================================
+local EmoteAnimIds = {
+    ["Wave"]             = "rbxassetid://507770239",
+    ["Dab"]              = "rbxassetid://3360686498",
+    ["Dance"]            = "rbxassetid://507771019",
+    ["Laugh"]            = "rbxassetid://507770818",
+    ["Point"]            = "rbxassetid://507770453",
+    ["Cheer"]            = "rbxassetid://507770677",
+    ["Salute"]           = "rbxassetid://3360692915",
+    ["Shrug"]            = "rbxassetid://3360689775",
+    ["Tilt"]             = "rbxassetid://3360693148",
+    ["Breakdance"]       = "rbxassetid://182435998",
+    ["Robot"]            = "rbxassetid://182436935",
+    ["Floss"]            = "rbxassetid://2106759570",
+    ["Orange Justice"]   = "rbxassetid://2767720887",
+    ["Griddy"]           = "rbxassetid://7715333682",
+    ["Renegade"]         = "rbxassetid://6899663224",
+    ["Woah"]             = "rbxassetid://6899663224",
+    ["Shoot"]            = "rbxassetid://6899663224",
+    ["Backpack Kid"]     = "rbxassetid://2106759570",
+    ["Wiggle"]           = "rbxassetid://507770239",
+    ["Electro Shuffle"]  = "rbxassetid://6899663224",
+    ["Gangnam Style"]    = "rbxassetid://182436935",
+    ["Whip Nae Nae"]     = "rbxassetid://2767720887",
+    ["Running Man"]      = "rbxassetid://182435998",
+    ["Moonwalk"]         = "rbxassetid://182436935",
+    ["Worm"]             = "rbxassetid://182435998",
+    ["Sprinkler"]        = "rbxassetid://507770239",
+    ["Macarena"]         = "rbxassetid://2106759570",
+    ["YMCA"]             = "rbxassetid://507771019",
+    ["Thriller"]         = "rbxassetid://182436935",
+    ["Disco Fever"]      = "rbxassetid://2106759570",
+}
+
+local ActiveEmoteTrack = nil
+
+local function PlaySelectedEmote()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    local animator = hum:FindFirstChildOfClass("Animator")
+    if not animator then return end
+
+    -- stop previous emote if playing
+    if ActiveEmoteTrack then
+        pcall(function() ActiveEmoteTrack:Stop(0.1) end)
+        ActiveEmoteTrack = nil
+    end
+
+    local emoteName = flags.selectedemote or "Wave"
+    local animId = EmoteAnimIds[emoteName]
+    if not animId then return end
+
+    local anim = Instance.new("Animation")
+    anim.AnimationId = animId
+
+    local track = animator:LoadAnimation(anim)
+    track.Priority = Enum.AnimationPriority.Action4  -- highest priority, overrides everything
+    track.Looped = true
+    track:Play(0.1)
+    ActiveEmoteTrack = track
+    anim:Destroy()
+
+    -- stop when keybind pressed again (toggle off)
+    track.Stopped:Connect(function()
+        if ActiveEmoteTrack == track then
+            ActiveEmoteTrack = nil
+        end
+    end)
+end
+
+-- ============================================================================
 -- INPUT
 -- ============================================================================
 UserInputService.InputBegan:Connect(function(input,processed)
@@ -1560,6 +1650,15 @@ UserInputService.InputBegan:Connect(function(input,processed)
     if flags.superjump and KeyMatches(input,"superjumpkey") then SuperJumpActive=not SuperJumpActive end
     -- Infinite Range: toggle enables it, keybind activates/deactivates
     if flags.infrange and KeyMatches(input,"infrangekey") then InfRangeActive=not InfRangeActive end
+    -- Animation Player: play selected emote
+    if KeyMatches(input,"emotekey") then
+        if ActiveEmoteTrack then
+            pcall(function() ActiveEmoteTrack:Stop(0.1) end)
+            ActiveEmoteTrack = nil
+        else
+            PlaySelectedEmote()
+        end
+    end
 end)
 
 -- ============================================================================
@@ -2075,3 +2174,10 @@ LocalPlayer.CharacterAdded:Connect(SC_WatchCharacter)
 for _,v in ipairs(LocalPlayer.Backpack:GetChildren()) do if v:IsA("Tool") then SC_SetupTool(v) end end
 LocalPlayer.Backpack.ChildAdded:Connect(function(v) if v:IsA("Tool") then SC_SetupTool(v) end end)
 
+-- re-apply emote after respawn if one was active
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    if flags.selectedemote and ActiveEmoteTrack == nil then return end
+    -- don't auto-replay on respawn, user must press key again
+    ActiveEmoteTrack = nil
+end)
